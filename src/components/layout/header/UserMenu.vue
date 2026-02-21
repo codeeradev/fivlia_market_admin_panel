@@ -8,22 +8,18 @@
         <img src="/images/user/owner.jpg" alt="User" />
       </span>
 
-      <span class="block mr-1 font-medium text-theme-sm">Musharof </span>
+      <span class="block mr-1 font-medium text-theme-sm">Admin</span>
 
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>
 
-    <!-- Dropdown Start -->
     <div
       v-if="dropdownOpen"
       class="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
     >
       <div>
         <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-          Musharof Chowdhury
-        </span>
-        <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-          randomuser@pimjo.com
+          Admin Account
         </span>
       </div>
 
@@ -33,7 +29,6 @@
             :to="item.href"
             class="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
           >
-            <!-- SVG icon would go here -->
             <component
               :is="item.icon"
               class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
@@ -42,6 +37,7 @@
           </router-link>
         </li>
       </ul>
+
       <router-link
         to="/signin"
         @click="signOut"
@@ -53,7 +49,6 @@
         Sign out
       </router-link>
     </div>
-    <!-- Dropdown End -->
   </div>
 </template>
 
@@ -68,9 +63,9 @@ const dropdownRef = ref<HTMLElement | null>(null)
 const router = useRouter()
 
 const menuItems = [
-  { href: '/profile', icon: UserCircleIcon, text: 'Edit profile' },
-  { href: '/profile', icon: SettingsIcon, text: 'Account settings' },
-  { href: '/profile', icon: InfoCircleIcon, text: 'Support' },
+  { href: '/admin-settings', icon: UserCircleIcon, text: 'Profile & Settings' },
+  { href: '/admin-settings', icon: SettingsIcon, text: 'Account settings' },
+  { href: '/admin-settings', icon: InfoCircleIcon, text: 'Support' },
 ]
 
 const toggleDropdown = () => {

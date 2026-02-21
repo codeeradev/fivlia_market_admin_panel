@@ -75,6 +75,23 @@
                   </span>
                 </router-link>
 
+                <button
+                  v-else-if="item.action"
+                  @click="item.action()"
+                  :class="[
+                    'menu-item group w-full',
+                    'menu-item-inactive',
+                    !isExpanded && !isHovered ? 'lg:justify-center' : 'lg:justify-start',
+                  ]"
+                >
+                  <span class="menu-item-icon-inactive">
+                    <component :is="item.icon" />
+                  </span>
+                  <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">
+                    {{ item.name }}
+                  </span>
+                </button>
+
                 <transition @enter="startTransition" @after-enter="endTransition" @before-leave="startTransition"
                   @after-leave="endTransition">
                   <div v-show="isSubmenuOpen(groupIndex, index) && (isExpanded || isHovered || isMobileOpen)">
@@ -120,7 +137,7 @@
 
 <script setup lang="ts">
 import { computed, type Component } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import {
   GridIcon,
   CalenderIcon,
@@ -133,8 +150,10 @@ import {
   HorizontalDots,
   PageIcon,
   ListIcon,
+  LogoutIcon,
 } from "../../icons";
 
+import { clearAdminSession } from "@/utils/adminAuth";
 import { useSidebar } from "@/composables/useSidebar";
 
 interface SubItem {
@@ -149,6 +168,7 @@ interface MenuItem {
   name: string;
   path?: string;
   subItems?: SubItem[];
+  action?: () => void;
 }
 
 interface MenuGroup {
@@ -157,10 +177,16 @@ interface MenuGroup {
 }
 
 const route = useRoute();
+const router = useRouter();
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
 /* this is fine now because they ARE booleans */
 const isActive = (path?: string) => !!path && route.path === path;
+
+const signOut = async () => {
+  clearAdminSession();
+  await router.replace("/signin");
+};
 
 const menuGroups: MenuGroup[] = [
   {
@@ -187,6 +213,7 @@ const menuGroups: MenuGroup[] = [
     title: "Others",
     items: [
       { icon: PageIcon, name: "Profile & Settings", path: "/admin-settings" },
+      { icon: LogoutIcon, name: "Logout", action: signOut },
       // {
       //   icon: BoxCubeIcon,
       //   name: "Ui Elements",
