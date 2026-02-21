@@ -40,6 +40,7 @@ export const ENDPOINTS = {
 
   GET_SETTING: '/admin/get-setting',
   UPDATE_SETTING: '/admin/update-setting',
+  ADMIN_LOGIN: '/admin/login',
 
   GET_NOTIFICATION: '/get-notification',
   CREATE_NOTIFICATION: '/create-notification',

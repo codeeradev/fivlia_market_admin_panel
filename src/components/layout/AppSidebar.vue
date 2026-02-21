@@ -133,10 +133,8 @@ import {
   HorizontalDots,
   PageIcon,
   ListIcon,
-  PlugInIcon,
 } from "../../icons";
 
-import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
 
 interface SubItem {
@@ -201,7 +199,6 @@ const menuGroups: MenuGroup[] = [
       //     { name: "Videos", path: "/videos" },
       //   ],
       // },
-      { icon: PlugInIcon, name: "Authentication", subItems: [{ name: "Signin", path: "/signin" }, { name: "Signup", path: "/signup" }] },
     ],
   },
 ];

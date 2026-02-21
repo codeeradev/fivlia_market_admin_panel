@@ -59,6 +59,27 @@
       <section>
         <h2 class="text-xl font-semibold mb-4">Admin Settings</h2>
 
+        <div class="grid md:grid-cols-3 gap-6">
+          <input
+            v-model="adminSetting.name"
+            placeholder="Admin Name"
+            class="border p-2 rounded"
+          />
+          <input
+            v-model="adminSetting.email"
+            type="email"
+            placeholder="Admin Email"
+            class="border p-2 rounded"
+          />
+          <input
+            v-model="adminSetting.password"
+            type="password"
+            placeholder="Admin Password"
+            class="border p-2 rounded"
+          />
+        </div>
+
+        <!--
         <div class="grid md:grid-cols-2 gap-6">
           <textarea
             v-model="adminSetting.term_and_conditons"
@@ -74,6 +95,7 @@
             class="border p-2 rounded"
           />
         </div>
+        -->
 
         <div class="flex justify-end mt-5">
           <button
@@ -148,6 +170,9 @@ const selectedImage = ref<File | null>(null);
 const previewImage = ref("");
 
 const adminSetting = reactive({
+  name: "",
+  email: "",
+  password: "",
   term_and_conditons: "",
   radius: ""
 });
@@ -170,6 +195,9 @@ const loadAdminSetting = async () => {
     const res: any = await get(ENDPOINTS.GET_SETTING);
 
     if (res.data) {
+      adminSetting.name = res.data.name || "";
+      adminSetting.email = res.data.email || "";
+      adminSetting.password = "";
       adminSetting.term_and_conditons = res.data.term_and_conditons || "";
       adminSetting.radius = res.data.radius || "";
     }
@@ -182,7 +210,19 @@ const saveAdminSetting = async () => {
   isSavingSetting.value = true;
 
   try {
-    await post(ENDPOINTS.UPDATE_SETTING, adminSetting);
+    const payload: any = {
+      name: adminSetting.name,
+      email: adminSetting.email,
+      term_and_conditons: adminSetting.term_and_conditons,
+      radius: adminSetting.radius,
+    };
+
+    if (adminSetting.password.trim()) {
+      payload.password = adminSetting.password.trim();
+    }
+
+    await post(ENDPOINTS.UPDATE_SETTING, payload);
+    adminSetting.password = "";
     showToast("Settings updated successfully");
   } catch {
     showToast("Failed to update settings", "error");

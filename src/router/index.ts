@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { clearAdminSession, hasValidAdminSession } from '@/utils/adminAuth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -139,20 +140,31 @@ const router = createRouter({
         title: 'Signin',
       },
     },
-    {
-      path: '/signup',
-      name: 'Signup',
-      component: () => import('../views/Auth/Signup.vue'),
-      meta: {
-        title: 'Signup',
-      },
-    },
   ],
 })
 
 export default router
 
 router.beforeEach((to, from, next) => {
-  document.title = `Fivlia Market ${to.meta.title} | Fivlia Market Dashboard`
+  document.title = `Fivlia Market ${to.meta.title || ''} | Fivlia Market Dashboard`
+
+  const publicRoutes = new Set(['/signin', '/error-404'])
+  const isAuthenticated = hasValidAdminSession()
+
+  if (publicRoutes.has(to.path)) {
+    if (to.path === '/signin' && isAuthenticated) {
+      next('/')
+      return
+    }
+    next()
+    return
+  }
+
+  if (!isAuthenticated) {
+    clearAdminSession()
+    next('/signin')
+    return
+  }
+
   next()
 })

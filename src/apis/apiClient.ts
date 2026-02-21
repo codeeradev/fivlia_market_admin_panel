@@ -1,12 +1,24 @@
 // src/apis/apiClient.ts
 import axios from "axios";
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import { getAdminToken } from "@/utils/adminAuth";
 
 // const BASE_URL = import.meta.env.VITE_API_URL || "https://marketapi.fivlia.co.in" || "http://172.93.223.239:8090";
 const BASE_URL = "http://localhost:8090";
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   // headers: { "Content-Type": "application/json" },
+});
+
+api.interceptors.request.use((config) => {
+  const token = getAdminToken();
+
+  if (token) {
+    config.headers = config.headers ?? {};
+    (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
+  }
+
+  return config;
 });
 
 // GET

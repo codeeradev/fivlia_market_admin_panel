@@ -40,6 +40,9 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                   Enter your email and password to sign in!
                 </p>
+                <p v-if="errorMessage" class="mt-3 text-sm text-red-600 dark:text-red-400">
+                  {{ errorMessage }}
+                </p>
               </div>
               <div>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
@@ -229,25 +232,15 @@
                     <div>
                       <button
                         type="submit"
+                        :disabled="isSubmitting"
                         class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600"
                       >
-                        Sign In
+                        <span v-if="!isSubmitting">Sign In</span>
+                        <span v-else>Signing In...</span>
                       </button>
                     </div>
                   </div>
                 </form>
-                <div class="mt-5">
-                  <p
-                    class="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start"
-                  >
-                    Don't have an account?
-                    <router-link
-                      to="/signup"
-                      class="text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                      >Sign Up</router-link
-                    >
-                  </p>
-                </div>
               </div>
             </div>
           </div>
@@ -274,23 +267,62 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import CommonGridShape from '@/components/common/CommonGridShape.vue'
 import FullScreenLayout from '@/components/layout/FullScreenLayout.vue'
+import { post } from '@/apis/apiClient'
+import { ENDPOINTS } from '@/apis/endpoint'
+import { saveAdminSession } from '@/utils/adminAuth'
+
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const keepLoggedIn = ref(false)
+const isSubmitting = ref(false)
+const errorMessage = ref('')
+const router = useRouter()
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-const handleSubmit = () => {
-  // Handle form submission
-  console.log('Form submitted', {
-    email: email.value,
-    password: password.value,
-    keepLoggedIn: keepLoggedIn.value,
-  })
+const handleSubmit = async () => {
+  errorMessage.value = ''
+
+  if (!email.value.trim() || !password.value.trim()) {
+    errorMessage.value = 'Email and password are required'
+    return
+  }
+
+  try {
+    isSubmitting.value = true
+
+    const res: any = await post(ENDPOINTS.ADMIN_LOGIN, {
+      email: email.value.trim(),
+      password: password.value,
+    })
+
+    if (!res?.token) {
+      throw new Error('Invalid login response')
+    }
+
+    const serverExpiresAt = res.expiresAt ? new Date(res.expiresAt).getTime() : undefined
+
+    saveAdminSession({
+      token: res.token,
+      expiresAt:
+        Number.isFinite(serverExpiresAt) && serverExpiresAt
+          ? serverExpiresAt
+          : Date.now() + 24 * 60 * 60 * 1000,
+      email: res?.admin?.email || email.value.trim(),
+      name: res?.admin?.name || '',
+    })
+
+    await router.replace('/')
+  } catch (error: any) {
+    errorMessage.value = error?.response?.data?.message || 'Failed to sign in'
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
