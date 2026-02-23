@@ -144,7 +144,7 @@ import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import BaseTable from "@/components/common/BaseTable.vue";
 import BaseModal from "@/components/common/BaseModal.vue";
-import { get, post, put } from "@/apis/apiClient";
+import { get, post } from "@/apis/apiClient";
 import { ENDPOINTS } from "@/apis/endpoint";
 
 const plans = ref([]);

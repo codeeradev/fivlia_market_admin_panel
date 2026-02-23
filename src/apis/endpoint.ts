@@ -32,8 +32,8 @@ export const ENDPOINTS = {
   ADD_PLANS: '/addPlans',
   GET_PLANS: '/getPlans',
   EDIT_PLANS: (planId: string) => `/edit-elans/${planId}`,
-  UPDATE_PRODUCT_STATUS: '/update-product-status',
-  UPDATE_BANNER: (id: string) => `update-banner-status/${id}`,
+  UPDATE_PRODUCT_STATUS: (id: string) => `/update-product-status/${id}`,
+  UPDATE_BANNER: (id: string) => `/update-banner-status/${id}`,
   UPDATE_BANNER_APPROVAL: (id: string) => `/update-banner-approval/${id}`,
 
   GET_CITY: '/get-city',
