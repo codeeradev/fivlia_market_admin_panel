@@ -22,7 +22,7 @@
           </td>
 
           <td class="px-4 py-3">
-            {{ user.phone || '—' }}
+            {{ user.mobileNumber || '—' }}
           </td>
 
           <td class="px-4 py-3">

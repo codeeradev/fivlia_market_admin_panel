@@ -53,7 +53,7 @@
             <input
               v-model="adminSetting.password"
               type="password"
-              placeholder="Admin Password (optional)"
+              placeholder="Admin Password"
               class="border p-2 rounded md:col-span-2"
             />
           </div>
