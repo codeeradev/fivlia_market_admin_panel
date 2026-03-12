@@ -7,7 +7,7 @@
             <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.35),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(14,165,233,0.25),transparent_45%)]"></div>
 
             <div class="relative">
-              <p class="text-xs uppercase tracking-[0.24em] text-slate-300">Fivlia Market</p>
+              <p class="text-xs uppercase tracking-[0.24em] text-slate-300">Fivlia Connect</p>
               <h2 class="mt-6 text-4xl font-semibold leading-tight">Admin Control Center</h2>
               <p class="mt-4 text-base text-slate-300">
                 Manage categories, products, banners, approvals, and notifications from one secure dashboard.

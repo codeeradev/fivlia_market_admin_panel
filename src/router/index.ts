@@ -146,7 +146,7 @@ const router = createRouter({
 export default router
 
 router.beforeEach((to, from, next) => {
-  document.title = `Fivlia Market ${to.meta.title || ''} | Fivlia Market Dashboard`
+  document.title = `Fivlia Connect ${to.meta.title || ''} | Fivlia Connect Dashboard`
 
   const publicRoutes = new Set(['/signin', '/error-404'])
   const isAuthenticated = hasValidAdminSession()

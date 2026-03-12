@@ -17,7 +17,6 @@ export interface ISubCategory {
   image?: string;
   attribute?: string[];
   status?: boolean;
-  commison?: number;
 }
 
 export interface ICategory {

@@ -78,7 +78,6 @@
             <tr v-else>
               <th class="px-4 py-2">Image</th>
               <th class="px-4 py-2">Name</th>
-              <th class="px-4 py-2">Commission (%)</th>
               <th class="px-4 py-2 text-center">Status</th>
               <th class="px-4 py-2 text-center">Actions</th>
             </tr>
@@ -148,10 +147,6 @@
 
               <td class="px-4 py-2 font-medium">
                 {{ sub.name }}
-              </td>
-
-              <td class="px-4 py-2">
-                {{ (sub as any).commison ?? '-' }}
               </td>
 
               <td class="px-4 py-2 text-center">

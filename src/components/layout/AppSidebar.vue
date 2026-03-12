@@ -15,7 +15,7 @@
     ]">
       <router-link to="/" class="inline-flex items-center">
         <span class="text-lg font-semibold text-slate-800 dark:text-white leading-none">
-          FIVLIA MARKET
+          FIVLIA CONNECT
         </span>
       </router-link>
     </div>

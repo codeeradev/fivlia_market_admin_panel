@@ -14,7 +14,13 @@
         </button>
       </div>
 
-      <div class="overflow-x-auto">
+      <div v-if="isLoadingList" class="flex justify-center py-10">
+        <div
+          class="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"
+        ></div>
+      </div>
+
+      <div v-else class="overflow-x-auto">
         <BaseTable>
           <template #head>
             <th class="px-4 py-2">Image</th>
@@ -58,10 +64,15 @@
               <td class="px-4 py-2">
                 <button
                   @click="toggleStatus(b)"
-                  class="rounded px-2 py-1 text-xs text-white"
+                  :disabled="statusUpdatingId === b._id"
+                  class="inline-flex items-center gap-2 rounded px-2 py-1 text-xs text-white disabled:cursor-not-allowed disabled:opacity-70"
                   :class="b.status ? 'bg-green-600' : 'bg-red-600'"
                 >
-                  {{ b.status ? 'Active' : 'Inactive' }}
+                  <span
+                    v-if="statusUpdatingId === b._id"
+                    class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/35 border-t-white"
+                  ></span>
+                  {{ statusUpdatingId === b._id ? 'Updating...' : b.status ? 'Active' : 'Inactive' }}
                 </button>
               </td>
 
@@ -86,7 +97,7 @@
         </BaseTable>
       </div>
 
-      <div v-if="banners.length === 0" class="py-10 text-center text-gray-500">No banners found</div>
+      <div v-if="!isLoadingList && banners.length === 0" class="py-10 text-center text-gray-500">No banners found</div>
     </div>
 
     <BaseModal v-if="showModal" @close="showModal = false">
@@ -123,27 +134,25 @@
           </select>
         </div>
 
-        <template v-if="!isEdit">
-          <div>
-            <label class="mb-1 block text-sm font-medium">City (optional)</label>
-            <select v-model="form.cityId" class="h-10 w-full rounded border p-2">
-              <option value="">Select City</option>
-              <option v-for="c in cities" :key="c._id" :value="c._id">
-                {{ c.city || c.name }}
-              </option>
-            </select>
-          </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium">City (optional)</label>
+          <select v-model="form.cityId" class="h-10 w-full rounded border p-2">
+            <option value="">Select City</option>
+            <option v-for="c in cities" :key="c._id" :value="c._id">
+              {{ c.city || c.name }}
+            </option>
+          </select>
+        </div>
 
-          <div>
-            <label class="mb-1 block text-sm font-medium">From Date</label>
-            <input v-model="form.fromDate" type="datetime-local" class="h-10 w-full rounded border p-2" />
-          </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium">From Date</label>
+          <input v-model="form.fromDate" type="datetime-local" class="h-10 w-full rounded border p-2" />
+        </div>
 
-          <div>
-            <label class="mb-1 block text-sm font-medium">To Date</label>
-            <input v-model="form.toDate" type="datetime-local" class="h-10 w-full rounded border p-2" />
-          </div>
-        </template>
+        <div>
+          <label class="mb-1 block text-sm font-medium">To Date</label>
+          <input v-model="form.toDate" type="datetime-local" class="h-10 w-full rounded border p-2" />
+        </div>
 
         <div>
           <label class="mb-1 block text-sm font-medium">Image</label>
@@ -153,8 +162,24 @@
       </div>
 
       <template #footer>
-        <button @click="showModal = false" class="rounded border px-4 py-2">Cancel</button>
-        <button @click="saveBanner" class="rounded bg-blue-600 px-4 py-2 text-white">Save</button>
+        <button
+          @click="showModal = false"
+          :disabled="isSaving"
+          class="rounded border px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Cancel
+        </button>
+        <button
+          @click="saveBanner"
+          :disabled="isSaving"
+          class="inline-flex items-center gap-2 rounded bg-blue-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <span
+            v-if="isSaving"
+            class="h-4 w-4 animate-spin rounded-full border-2 border-white/35 border-t-white"
+          ></span>
+          {{ isSaving ? (isEdit ? 'Updating...' : 'Saving...') : 'Save' }}
+        </button>
       </template>
     </BaseModal>
 
@@ -204,7 +229,7 @@
                 </div>
               </div>
 
-              <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div class="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/50">
                   <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Plan</p>
                   <p class="mt-1 font-semibold text-gray-900 dark:text-gray-100">{{ detailBanner.selectedPlanId?.duration || '-' }}</p>
@@ -212,10 +237,6 @@
                 <div class="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/50">
                   <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Price</p>
                   <p class="mt-1 font-semibold text-gray-900 dark:text-gray-100">{{ formatPrice(detailBanner.selectedPlanId?.price) }}</p>
-                </div>
-                <div class="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/50">
-                  <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Type</p>
-                  <p class="mt-1 font-semibold text-gray-900 dark:text-gray-100">{{ detailBanner.type || '-' }}</p>
                 </div>
               </div>
             </div>
@@ -316,6 +337,9 @@ import BaseModal from "@/components/common/BaseModal.vue";
 import BaseTable from "@/components/common/BaseTable.vue";
 import { get, post, put } from "@/apis/apiClient";
 import { ENDPOINTS } from "@/apis/endpoint";
+import { useAppAlert } from "@/composables/useAppAlert";
+
+const { setAlert } = useAppAlert();
 
 const banners = ref([]);
 const categories = ref([]);
@@ -327,6 +351,10 @@ const showDetailsModal = ref(false);
 const isEdit = ref(false);
 const editId = ref("");
 const detailBanner = ref(null);
+
+const isLoadingList = ref(false);
+const isSaving = ref(false);
+const statusUpdatingId = ref("");
 
 const file = ref(null);
 const preview = ref("");
@@ -342,6 +370,9 @@ const form = ref({
 });
 
 const IMAGE_URL = import.meta.env.VITE_IMAGEURL || "";
+
+const getErrorMessage = (error, fallbackMessage) =>
+  error?.response?.data?.message || fallbackMessage;
 
 const imgUrl = (path) => {
   if (!path) return "/no-image.png";
@@ -473,13 +504,27 @@ onMounted(async () => {
   await Promise.all([fetchAll(), loadCategories(), loadCities()]);
 });
 
-const fetchAll = async () => {
+const fetchAll = async ({ silent = false, showError = true } = {}) => {
+  if (!silent) {
+    isLoadingList.value = true;
+  }
+
   try {
     const res = await get(ENDPOINTS.GET_BANNERS);
     banners.value = Array.isArray(res) ? res : res?.banners || [];
+    return true;
   } catch (error) {
     console.error(error);
     banners.value = [];
+
+    if (showError) {
+      setAlert("error", getErrorMessage(error, "Failed to load banners"));
+    }
+    return false;
+  } finally {
+    if (!silent) {
+      isLoadingList.value = false;
+    }
   }
 };
 
@@ -490,6 +535,7 @@ const loadCategories = async () => {
   } catch (error) {
     console.error(error);
     categories.value = [];
+    setAlert("error", getErrorMessage(error, "Failed to load categories"));
   }
 };
 
@@ -500,6 +546,7 @@ const loadCities = async () => {
   } catch (error) {
     console.error(error);
     cities.value = [];
+    setAlert("error", getErrorMessage(error, "Failed to load cities"));
   }
 };
 
@@ -570,61 +617,105 @@ const selectFile = (event) => {
 };
 
 const saveBanner = async () => {
+  if (!form.value.mainCategory) {
+    setAlert("warning", "Main category is required");
+    return;
+  }
+
+  if (!form.value.fromDate || !form.value.toDate) {
+    setAlert("warning", "From Date and To Date are required");
+    return;
+  }
+
+  const parsedFromDate = new Date(form.value.fromDate);
+  const parsedToDate = new Date(form.value.toDate);
+
+  if (Number.isNaN(parsedFromDate.getTime()) || Number.isNaN(parsedToDate.getTime())) {
+    setAlert("warning", "Please provide valid From Date and To Date");
+    return;
+  }
+
+  if (parsedToDate.getTime() <= parsedFromDate.getTime()) {
+    setAlert("warning", "To Date must be after From Date");
+    return;
+  }
+
+  isSaving.value = true;
+  setAlert("loading", isEdit.value ? "Updating banner..." : "Saving banner...");
+
   try {
     const fd = new FormData();
-
     if (file.value) fd.append("image", file.value);
 
+    fd.append("title", form.value.title || "");
+    fd.append("mainCategory", form.value.mainCategory);
+    if (form.value.subCategory) fd.append("subCategory", form.value.subCategory);
+    if (form.value.cityId) fd.append("cityId", form.value.cityId);
+    fd.append("fromDate", parsedFromDate.toISOString());
+    fd.append("toDate", parsedToDate.toISOString());
+
+    let response = null;
+
     if (isEdit.value) {
-      fd.append("title", form.value.title || "");
       fd.append("status", String(!!form.value.status));
-      if (form.value.mainCategory) fd.append("mainCategory", form.value.mainCategory);
-      if (form.value.subCategory) fd.append("subCategory", form.value.subCategory);
-
-      await put(ENDPOINTS.UPDATE_BANNER(editId.value), fd);
+      response = await put(ENDPOINTS.UPDATE_BANNER(editId.value), fd);
     } else {
-      if (!form.value.mainCategory) {
-        alert("Main category is required");
-        return;
-      }
-      if (!form.value.fromDate || !form.value.toDate) {
-        alert("From Date and To Date are required");
-        return;
-      }
-
-      const parsedFromDate = new Date(form.value.fromDate);
-      const parsedToDate = new Date(form.value.toDate);
-
-      if (Number.isNaN(parsedFromDate.getTime()) || Number.isNaN(parsedToDate.getTime())) {
-        alert("Please provide valid From Date and To Date");
-        return;
-      }
-
-      fd.append("title", form.value.title || "");
-      fd.append("mainCategory", form.value.mainCategory);
-      if (form.value.subCategory) fd.append("subCategory", form.value.subCategory);
-      if (form.value.cityId) fd.append("cityId", form.value.cityId);
-      fd.append("fromDate", parsedFromDate.toISOString());
-      fd.append("toDate", parsedToDate.toISOString());
-
-      await post(ENDPOINTS.ADD_ADMIN_BANNER, fd);
+      response = await post(ENDPOINTS.ADD_ADMIN_BANNER, fd);
     }
 
     showModal.value = false;
-    await fetchAll();
+    const refreshed = await fetchAll({ silent: true, showError: false });
+
+    if (refreshed) {
+      setAlert(
+        "success",
+        response?.message ||
+          (isEdit.value ? "Banner updated successfully" : "Banner added successfully"),
+      );
+    } else {
+      setAlert(
+        "warning",
+        response?.message ||
+          "Banner saved, but list refresh failed. Please refresh and verify once.",
+      );
+    }
   } catch (error) {
     console.error(error);
-    alert(error?.response?.data?.message || "Failed to save banner");
+    setAlert("error", getErrorMessage(error, "Failed to save banner"));
+  } finally {
+    isSaving.value = false;
   }
 };
 
 const toggleStatus = async (banner) => {
+  if (!banner?._id || statusUpdatingId.value) return;
+
+  const nextStatus = !banner.status;
+  statusUpdatingId.value = banner._id;
+  setAlert("loading", nextStatus ? "Activating banner..." : "Deactivating banner...");
+
   try {
-    await put(ENDPOINTS.UPDATE_BANNER(banner._id), { status: !banner.status });
-    await fetchAll();
+    const response = await put(ENDPOINTS.UPDATE_BANNER(banner._id), { status: nextStatus });
+    const refreshed = await fetchAll({ silent: true, showError: false });
+
+    if (refreshed) {
+      setAlert(
+        "success",
+        response?.message ||
+          `Banner ${nextStatus ? "activated" : "deactivated"} successfully`,
+      );
+    } else {
+      setAlert(
+        "warning",
+        response?.message ||
+          `Banner ${nextStatus ? "activated" : "deactivated"}, but refresh failed`,
+      );
+    }
   } catch (error) {
     console.error(error);
-    alert(error?.response?.data?.message || "Failed to update banner status");
+    setAlert("error", getErrorMessage(error, "Failed to update banner status"));
+  } finally {
+    statusUpdatingId.value = "";
   }
 };
 </script>
