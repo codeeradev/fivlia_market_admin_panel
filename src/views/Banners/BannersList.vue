@@ -48,7 +48,7 @@
               <td class="px-4 py-2">
                 <div class="text-sm text-gray-900 dark:text-gray-100">{{ b.mainCategory?.name || '-' }}</div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ subCategoryLabel(b.subCategory, b.mainCategory) }} | {{ cityLabel(b.cityId) }}
+                  {{ subCategoryLabel(b.subCategory, b.mainCategory) }}
                 </div>
               </td>
 
@@ -135,13 +135,25 @@
         </div>
 
         <div>
-          <label class="mb-1 block text-sm font-medium">City (optional)</label>
-          <select v-model="form.cityId" class="h-10 w-full rounded border p-2">
-            <option value="">Select City</option>
-            <option v-for="c in cities" :key="c._id" :value="c._id">
-              {{ c.city || c.name }}
-            </option>
-          </select>
+          <label class="mb-1 block text-sm font-medium">Latitude</label>
+          <input
+            v-model="form.latitude"
+            type="number"
+            step="any"
+            placeholder="e.g. 28.6139"
+            class="h-10 w-full rounded border p-2"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-medium">Longitude</label>
+          <input
+            v-model="form.longitude"
+            type="number"
+            step="any"
+            placeholder="e.g. 77.2090"
+            class="h-10 w-full rounded border p-2"
+          />
         </div>
 
         <div>
@@ -156,7 +168,10 @@
 
         <div>
           <label class="mb-1 block text-sm font-medium">Image</label>
-          <input type="file" @change="selectFile" class="h-10 w-full rounded border p-2" />
+          <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+            Required banner size: 1280 x 540 px. Other dimensions will be rejected.
+          </p>
+          <input type="file" accept="image/*" @change="selectFile" class="h-10 w-full rounded border p-2" />
           <img v-if="preview" :src="preview" class="mt-2 h-24 w-48 rounded border object-cover" />
         </div>
       </div>
@@ -210,7 +225,6 @@
                   <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
                     {{ detailBanner.mainCategory?.name || '-' }} / {{ subCategoryLabel(detailBanner.subCategory, detailBanner.mainCategory) }}
                   </p>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">City: {{ cityLabel(detailBanner.cityId) }}</p>
                 </div>
 
                 <div class="flex flex-wrap gap-2">
@@ -256,8 +270,12 @@
                 <span class="font-medium text-gray-900 dark:text-gray-100">{{ subCategoryLabel(detailBanner.subCategory, detailBanner.mainCategory) }}</span>
               </div>
               <div class="flex items-center justify-between gap-3 py-2">
-                <span class="text-gray-500 dark:text-gray-400">City</span>
-                <span class="font-medium text-gray-900 dark:text-gray-100">{{ cityLabel(detailBanner.cityId) }}</span>
+                <span class="text-gray-500 dark:text-gray-400">Latitude</span>
+                <span class="font-medium text-gray-900 dark:text-gray-100">{{ coordinateLabel(detailBanner.latitude) }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-3 py-2">
+                <span class="text-gray-500 dark:text-gray-400">Longitude</span>
+                <span class="font-medium text-gray-900 dark:text-gray-100">{{ coordinateLabel(detailBanner.longitude) }}</span>
               </div>
             </div>
           </div>
@@ -344,7 +362,6 @@ const { setAlert } = useAppAlert();
 const banners = ref([]);
 const categories = ref([]);
 const subCategories = ref([]);
-const cities = ref([]);
 
 const showModal = ref(false);
 const showDetailsModal = ref(false);
@@ -364,12 +381,15 @@ const form = ref({
   status: true,
   mainCategory: "",
   subCategory: "",
-  cityId: "",
+  latitude: "",
+  longitude: "",
   fromDate: "",
   toDate: "",
 });
 
 const IMAGE_URL = import.meta.env.VITE_IMAGEURL || "";
+const REQUIRED_BANNER_WIDTH = 1280;
+const REQUIRED_BANNER_HEIGHT = 540;
 
 const getErrorMessage = (error, fallbackMessage) =>
   error?.response?.data?.message || fallbackMessage;
@@ -454,15 +474,51 @@ const subCategoryLabel = (subCategory, mainCategory) => {
   return matchedSubCategory?.name || "-";
 };
 
-const cityLabel = (city) => {
-  if (!city) return "-";
-  if (typeof city === "object") return city.city || city.name || "-";
+const coordinateLabel = (value) => {
+  if (value === undefined || value === null || value === "") return "-";
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? String(parsed) : String(value);
+};
 
-  const cityId = toIdString(city);
-  if (!cityId) return "-";
+const normalizeCoordinateInput = (value) => String(value ?? "").trim();
 
-  const matchedCity = cities.value.find((item) => toIdString(item) === cityId);
-  return matchedCity?.city || matchedCity?.name || "-";
+const revokePreviewUrl = () => {
+  if (preview.value && preview.value.startsWith("blob:")) {
+    URL.revokeObjectURL(preview.value);
+  }
+};
+
+const getImageDimensions = (selectedFile) =>
+  new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(selectedFile);
+    const image = new Image();
+
+    image.onload = () => {
+      const width = image.naturalWidth || image.width;
+      const height = image.naturalHeight || image.height;
+      URL.revokeObjectURL(objectUrl);
+      resolve({ width, height });
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Unable to read image dimensions"));
+    };
+
+    image.src = objectUrl;
+  });
+
+const validateBannerImage = async (selectedFile) => {
+  const { width, height } = await getImageDimensions(selectedFile);
+  if (width !== REQUIRED_BANNER_WIDTH || height !== REQUIRED_BANNER_HEIGHT) {
+    setAlert(
+      "warning",
+      `Banner image must be exactly ${REQUIRED_BANNER_WIDTH} x ${REQUIRED_BANNER_HEIGHT} pixels`,
+    );
+    return false;
+  }
+
+  return true;
 };
 
 const scheduleLabel = (banner) => {
@@ -501,7 +557,7 @@ const editFromDetails = () => {
 };
 
 onMounted(async () => {
-  await Promise.all([fetchAll(), loadCategories(), loadCities()]);
+  await Promise.all([fetchAll(), loadCategories()]);
 });
 
 const fetchAll = async ({ silent = false, showError = true } = {}) => {
@@ -539,23 +595,13 @@ const loadCategories = async () => {
   }
 };
 
-const loadCities = async () => {
-  try {
-    const res = await get(ENDPOINTS.GET_CITY);
-    cities.value = Array.isArray(res) ? res : res?.data || res?.cities || [];
-  } catch (error) {
-    console.error(error);
-    cities.value = [];
-    setAlert("error", getErrorMessage(error, "Failed to load cities"));
-  }
-};
-
 const loadSubCategories = () => {
   const cat = categories.value.find((c) => c._id === form.value.mainCategory);
   subCategories.value = cat ? cat.subcat || [] : [];
 };
 
 const resetForm = () => {
+  revokePreviewUrl();
   file.value = null;
   preview.value = "";
   subCategories.value = [];
@@ -564,7 +610,8 @@ const resetForm = () => {
     status: true,
     mainCategory: "",
     subCategory: "",
-    cityId: "",
+    latitude: "",
+    longitude: "",
     fromDate: "",
     toDate: "",
   };
@@ -594,12 +641,14 @@ const editBanner = (banner) => {
   closeDetailsModal();
   isEdit.value = true;
   editId.value = banner._id;
+  revokePreviewUrl();
 
   form.value.title = banner.title || "";
   form.value.status = !!banner.status;
   form.value.mainCategory = banner.mainCategory?._id || "";
   form.value.subCategory = banner.subCategory?._id || "";
-  form.value.cityId = banner.cityId?._id || banner.cityId || "";
+  form.value.latitude = coordinateLabel(banner.latitude) === "-" ? "" : coordinateLabel(banner.latitude);
+  form.value.longitude = coordinateLabel(banner.longitude) === "-" ? "" : coordinateLabel(banner.longitude);
   form.value.fromDate = formatDateTimeLocal(banner.fromDate);
   form.value.toDate = formatDateTimeLocal(banner.toDate);
 
@@ -609,11 +658,29 @@ const editBanner = (banner) => {
   showModal.value = true;
 };
 
-const selectFile = (event) => {
-  const selected = event.target.files?.[0];
+const selectFile = async (event) => {
+  const input = event.target;
+  const selected = input.files?.[0];
   if (!selected) return;
-  file.value = selected;
-  preview.value = URL.createObjectURL(selected);
+
+  try {
+    const isValid = await validateBannerImage(selected);
+    if (!isValid) {
+      input.value = "";
+      return;
+    }
+
+    revokePreviewUrl();
+    file.value = selected;
+    preview.value = URL.createObjectURL(selected);
+  } catch (error) {
+    console.error(error);
+    setAlert("error", "Unable to read the selected image. Please try another file.");
+  } finally {
+    if (!file.value || file.value !== selected) {
+      input.value = "";
+    }
+  }
 };
 
 const saveBanner = async () => {
@@ -640,6 +707,40 @@ const saveBanner = async () => {
     return;
   }
 
+  const normalizedLatitude = normalizeCoordinateInput(form.value.latitude);
+  const normalizedLongitude = normalizeCoordinateInput(form.value.longitude);
+
+  if (!normalizedLatitude || !normalizedLongitude) {
+    setAlert("warning", "Latitude and Longitude are required");
+    return;
+  }
+
+  const latitude = Number(normalizedLatitude);
+  const longitude = Number(normalizedLongitude);
+
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+    setAlert("warning", "Latitude must be a valid number between -90 and 90");
+    return;
+  }
+
+  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    setAlert("warning", "Longitude must be a valid number between -180 and 180");
+    return;
+  }
+
+  if (file.value) {
+    try {
+      const isValidImage = await validateBannerImage(file.value);
+      if (!isValidImage) {
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+      setAlert("error", "Unable to validate the banner image dimensions");
+      return;
+    }
+  }
+
   isSaving.value = true;
   setAlert("loading", isEdit.value ? "Updating banner..." : "Saving banner...");
 
@@ -650,7 +751,8 @@ const saveBanner = async () => {
     fd.append("title", form.value.title || "");
     fd.append("mainCategory", form.value.mainCategory);
     if (form.value.subCategory) fd.append("subCategory", form.value.subCategory);
-    if (form.value.cityId) fd.append("cityId", form.value.cityId);
+    fd.append("latitude", String(latitude));
+    fd.append("longitude", String(longitude));
     fd.append("fromDate", parsedFromDate.toISOString());
     fd.append("toDate", parsedToDate.toISOString());
 

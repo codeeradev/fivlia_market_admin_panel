@@ -59,23 +59,27 @@
           </div>
         </div>
 
-        <!--
-        <div class="grid md:grid-cols-2 gap-6 mt-6">
-          <textarea
-            v-model="adminSetting.term_and_conditons"
-            rows="5"
-            placeholder="Terms & Conditions"
-            class="border p-2 rounded"
-          ></textarea>
+        <div class="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
+          <div class="grid gap-2 md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-900 dark:text-gray-100">
+                Radius Setup
+              </label>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Set the default admin radius in kilometers for nearby actions and targeting.
+              </p>
+            </div>
 
-          <input
-            type="number"
-            v-model="adminSetting.radius"
-            placeholder="Radius (KM)"
-            class="border p-2 rounded"
-          />
+            <input
+              v-model="adminSetting.radius"
+              type="number"
+              min="0"
+              step="0.1"
+              placeholder="Radius (KM)"
+              class="border p-2 rounded"
+            />
+          </div>
         </div>
-        -->
 
         <div class="flex justify-end mt-6">
           <button
@@ -191,6 +195,19 @@ const saveAdminSetting = async () => {
     const payload = new FormData();
     payload.append("name", adminSetting.name || "");
     payload.append("email", adminSetting.email || "");
+
+    const normalizedRadius = String(adminSetting.radius ?? "").trim();
+    if (normalizedRadius) {
+      const radiusValue = Number(normalizedRadius);
+      if (!Number.isFinite(radiusValue) || radiusValue < 0) {
+        showToast("Radius must be a valid non-negative number", "error");
+        return;
+      }
+
+      payload.append("radius", String(radiusValue));
+    } else {
+      payload.append("radius", "");
+    }
 
     if (adminSetting.password.trim()) {
       payload.append("password", adminSetting.password.trim());
