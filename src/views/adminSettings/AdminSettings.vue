@@ -59,23 +59,45 @@
           </div>
         </div>
 
-        <div class="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
-          <div class="grid gap-2 md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
+        <div class="mt-6 grid gap-4 lg:grid-cols-2">
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
+            <div class="grid gap-2 md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Radius Setup
+                </label>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  Set the default admin radius in kilometers for nearby actions and targeting.
+                </p>
+              </div>
+
+              <input
+                v-model="adminSetting.radius"
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="Radius (KM)"
+                class="border p-2 rounded"
+              />
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
             <div>
               <label class="mb-1 block text-sm font-medium text-gray-900 dark:text-gray-100">
-                Radius Setup
+                Paid Product Price
               </label>
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                Set the default admin radius in kilometers for nearby actions and targeting.
+                This value is used by the app and backend when charging for paid product listings.
               </p>
             </div>
 
             <input
-              v-model="adminSetting.radius"
+              v-model="adminSetting.productPrice"
               type="number"
               min="0"
-              step="0.1"
-              placeholder="Radius (KM)"
+              step="0.01"
+              placeholder="Product price"
               class="border p-2 rounded"
             />
           </div>
@@ -150,6 +172,7 @@ const adminSetting = reactive({
   image: "",
   term_and_conditons: "",
   radius: "",
+  productPrice: "",
 });
 
 const imageUrl = (path: string) => {
@@ -173,12 +196,13 @@ const loadAdminSetting = async () => {
 
     if (res.data) {
       previewImage.value = "";
-      adminSetting.name = res.data.name || "";
-      adminSetting.email = res.data.email || "";
+      adminSetting.name = res.data.name ?? "";
+      adminSetting.email = res.data.email ?? "";
       adminSetting.password = "";
-      adminSetting.image = res.data.image || "";
-      adminSetting.term_and_conditons = res.data.term_and_conditons || "";
-      adminSetting.radius = res.data.radius || "";
+      adminSetting.image = res.data.image ?? "";
+      adminSetting.term_and_conditons = res.data.term_and_conditons ?? "";
+      adminSetting.radius = res.data.radius ?? "";
+      adminSetting.productPrice = res.data.productPrice ?? "";
       selectedFileName.value = adminSetting.image
         ? "Current photo loaded"
         : "No profile photo selected";
@@ -207,6 +231,19 @@ const saveAdminSetting = async () => {
       payload.append("radius", String(radiusValue));
     } else {
       payload.append("radius", "");
+    }
+
+    const normalizedProductPrice = String(adminSetting.productPrice ?? "").trim();
+    if (normalizedProductPrice) {
+      const productPriceValue = Number(normalizedProductPrice);
+      if (!Number.isFinite(productPriceValue) || productPriceValue < 0) {
+        showToast("Product price must be a valid non-negative number", "error");
+        return;
+      }
+
+      payload.append("productPrice", String(productPriceValue));
+    } else {
+      payload.append("productPrice", "");
     }
 
     if (adminSetting.password.trim()) {

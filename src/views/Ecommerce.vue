@@ -74,7 +74,7 @@
             <p class="text-sm font-medium text-emerald-700 dark:text-emerald-300">Listings</p>
             <p class="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{{ formatNumber(products.length) }}</p>
             <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
-              {{ formatNumber(productStatusCounts.active) }} active • {{ formatNumber(productStatusCounts.sold) }} sold
+              {{ formatNumber(productStatusCounts.active) }} active / {{ formatNumber(productStatusCounts.sold) }} sold
             </p>
           </article>
 
@@ -82,20 +82,20 @@
             <p class="text-sm font-medium text-orange-700 dark:text-orange-300">Pending Approvals</p>
             <p class="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{{ formatNumber(pendingApprovalsCount) }}</p>
             <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
-              {{ formatNumber(approvals.products.length) }} products • {{ formatNumber(approvals.banners.length) }} banners
+              {{ formatNumber(approvals.products.length) }} products / {{ formatNumber(approvals.banners.length) }} banners
             </p>
           </article>
 
           <article class="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm dark:border-violet-500/30 dark:bg-white/[0.03]">
-            <p class="text-sm font-medium text-violet-700 dark:text-violet-300">Notifications</p>
-            <p class="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{{ formatNumber(notifications.length) }}</p>
+            <p class="text-sm font-medium text-violet-700 dark:text-violet-300">All-Time Revenue</p>
+            <p class="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{{ formatCurrency(revenueAllTime.total) }}</p>
             <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
-              {{ formatNumber(filteredNotifications.length) }} created in {{ selectedRangeLabel }}
+              {{ formatNumber(revenueAllTime.bySource.product.count) }} products / {{ formatNumber(revenueAllTime.bySource.banner.count) }} banners
             </p>
           </article>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-3">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div class="rounded-2xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-white/[0.03]">
             <p class="text-xs text-gray-500 dark:text-gray-400">Active Banners</p>
             <p class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ formatNumber(bannerStatusCounts.active) }}</p>
@@ -105,8 +105,18 @@
             <p class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ formatNumber(activePlansCount) }}</p>
           </div>
           <div class="rounded-2xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-white/[0.03]">
-            <p class="text-xs text-gray-500 dark:text-gray-400">Active Listing Value</p>
-            <p class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ formatCurrency(activeListingValue) }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Today's Revenue</p>
+            <p class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ formatCurrency(revenueToday.total) }}</p>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ formatNumber(revenueToday.count) }} paid transactions today
+            </p>
+          </div>
+          <div class="rounded-2xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-white/[0.03]">
+            <p class="text-xs text-gray-500 dark:text-gray-400">This Month Revenue</p>
+            <p class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ formatCurrency(revenueMonth.total) }}</p>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ formatCurrency(revenueMonth.bySource.product.total) }} from products / {{ formatCurrency(revenueMonth.bySource.banner.total) }} from banners
+            </p>
           </div>
         </div>
 
@@ -169,7 +179,7 @@
               >
                 <div>
                   <p class="text-sm font-medium text-gray-900 dark:text-white">{{ item.title }}</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.owner }} • {{ formatDateTime(item.createdAt) }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.owner }} / {{ formatDateTime(item.createdAt) }}</p>
                 </div>
                 <span
                   :class="[
@@ -185,6 +195,54 @@
             </ul>
           </section>
         </div>
+
+        <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+          <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Revenue Activity</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Paid product and banner transactions captured by the backend</p>
+            </div>
+          </div>
+
+          <div class="max-w-full overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="border-b border-gray-100 dark:border-gray-800">
+                <tr>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Source</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Amount</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Owner</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Transaction</th>
+                  <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Time</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr v-if="recentRevenueRows.length === 0">
+                  <td colspan="5" class="px-5 py-7 text-center text-sm text-gray-500 dark:text-gray-400">
+                    No revenue activity available for {{ selectedRangeLabel }}.
+                  </td>
+                </tr>
+
+                <tr
+                  v-for="row in recentRevenueRows"
+                  :key="row.id"
+                  class="border-b border-gray-100 last:border-0 dark:border-gray-800"
+                >
+                  <td class="px-5 py-3">
+                    <div>
+                      <p class="text-sm font-medium text-gray-900 dark:text-white">{{ row.source }}</p>
+                      <p v-if="row.subtitle" class="text-xs text-gray-500 dark:text-gray-400">{{ row.subtitle }}</p>
+                    </div>
+                  </td>
+                  <td class="px-5 py-3 text-sm font-semibold text-gray-900 dark:text-white">{{ formatCurrency(row.amount) }}</td>
+                  <td class="px-5 py-3 text-sm text-gray-700 dark:text-gray-300">{{ row.owner }}</td>
+                  <td class="px-5 py-3 text-xs text-gray-500 dark:text-gray-400">{{ row.transactionId }}</td>
+                  <td class="px-5 py-3 text-xs text-gray-500 dark:text-gray-400">{{ formatDateTime(row.createdAt) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
           <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
@@ -262,6 +320,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import type { ApexOptions } from 'apexcharts'
 import VueApexCharts from 'vue3-apexcharts'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { ENDPOINTS } from '@/apis/endpoint'
@@ -309,7 +368,10 @@ interface NotificationRecord {
 
 interface BannerPlanRecord {
   _id?: string
+  type?: 'home' | 'subCategory'
+  price?: number
   status?: boolean
+  createdAt?: string
 }
 
 interface ApprovalRecord {
@@ -345,6 +407,44 @@ interface NotificationsResponse {
   data?: NotificationRecord[]
 }
 
+interface RevenueSourceBreakdown {
+  total: number
+  count: number
+}
+
+interface RevenueBucket {
+  total: number
+  count: number
+  bySource: {
+    product: RevenueSourceBreakdown
+    banner: RevenueSourceBreakdown
+  }
+}
+
+interface EarningRecord {
+  _id?: string
+  sourceType?: 'product' | 'banner'
+  amount?: number
+  transactionId?: string
+  userId?: UserRef
+  createdAt?: string
+  meta?: {
+    planType?: 'home' | 'subCategory'
+    productType?: string
+  }
+}
+
+interface AdminDashboardResponse {
+  data?: {
+    revenue?: {
+      allTime?: Partial<RevenueBucket>
+      today?: Partial<RevenueBucket>
+      month?: Partial<RevenueBucket>
+    }
+    recentEarnings?: EarningRecord[]
+  }
+}
+
 interface ApprovalItemView {
   id: string
   type: 'Product' | 'Banner'
@@ -362,6 +462,16 @@ interface ActivityRow {
   createdAt?: string
   image?: string
   price?: number
+}
+
+interface RevenueRow {
+  id: string
+  source: string
+  subtitle: string
+  owner: string
+  amount: number
+  transactionId: string
+  createdAt?: string
 }
 
 const RANGE_DAYS: Record<RangeKey, number | null> = {
@@ -390,6 +500,31 @@ const approvals = ref<{ products: ApprovalRecord[]; banners: ApprovalRecord[] }>
   products: [],
   banners: [],
 })
+const revenueToday = ref<RevenueBucket>({
+  total: 0,
+  count: 0,
+  bySource: {
+    product: { total: 0, count: 0 },
+    banner: { total: 0, count: 0 },
+  },
+})
+const revenueMonth = ref<RevenueBucket>({
+  total: 0,
+  count: 0,
+  bySource: {
+    product: { total: 0, count: 0 },
+    banner: { total: 0, count: 0 },
+  },
+})
+const revenueAllTime = ref<RevenueBucket>({
+  total: 0,
+  count: 0,
+  bySource: {
+    product: { total: 0, count: 0 },
+    banner: { total: 0, count: 0 },
+  },
+})
+const recentEarnings = ref<EarningRecord[]>([])
 
 const selectedRange = ref<RangeKey>('30d')
 const loading = ref(true)
@@ -417,6 +552,30 @@ const isInsideRange = (createdAt?: string, days?: number | null): boolean => {
 }
 
 const normalizeStatus = (value?: string): string => String(value || '').trim().toLowerCase()
+
+const createEmptyRevenueBucket = (): RevenueBucket => ({
+  total: 0,
+  count: 0,
+  bySource: {
+    product: { total: 0, count: 0 },
+    banner: { total: 0, count: 0 },
+  },
+})
+
+const normalizeRevenueBucket = (bucket?: Partial<RevenueBucket>): RevenueBucket => ({
+  total: Number(bucket?.total || 0),
+  count: Number(bucket?.count || 0),
+  bySource: {
+    product: {
+      total: Number(bucket?.bySource?.product?.total || 0),
+      count: Number(bucket?.bySource?.product?.count || 0),
+    },
+    banner: {
+      total: Number(bucket?.bySource?.banner?.total || 0),
+      count: Number(bucket?.bySource?.banner?.count || 0),
+    },
+  },
+})
 
 const getUserName = (user: UserRef): string => {
   if (!user) return 'Unknown'
@@ -452,6 +611,12 @@ const formatCurrency = (value: number): string =>
     currency: 'INR',
     maximumFractionDigits: 0,
   }).format(value)
+
+const formatPlanType = (value?: string): string => {
+  if (value === 'home') return 'Home Banner'
+  if (value === 'subCategory') return 'Sub Category Banner'
+  return ''
+}
 
 const formatDateTime = (value?: string | Date | null): string => {
   const parsed = parseDate(value || null)
@@ -509,14 +674,6 @@ const activePlansCount = computed(
   () => plans.value.filter((plan) => Boolean(plan.status)).length,
 )
 
-const activeListingValue = computed(() =>
-  products.value.reduce((sum, item) => {
-    if (normalizeStatus(item.productStatus) !== 'active') return sum
-    const amount = Number(item.price || 0)
-    return Number.isFinite(amount) ? sum + amount : sum
-  }, 0),
-)
-
 const monthBuckets = computed(() => {
   const bucketCount = 6
   const buckets: Array<{ key: string; label: string }> = []
@@ -551,7 +708,7 @@ const activityChartSeries = computed(() => [
   { name: 'Listings', data: buildMonthlySeries(products.value) },
 ])
 
-const activityChartOptions = computed(() => ({
+const activityChartOptions = computed<ApexOptions>(() => ({
   chart: {
     type: 'area',
     toolbar: { show: false },
@@ -606,7 +763,7 @@ const productChartLabels = computed(() => {
   return raw.some((value) => value > 0) ? ['Active', 'Sold', 'Expired'] : ['No Data']
 })
 
-const productChartOptions = computed(() => ({
+const productChartOptions = computed<ApexOptions>(() => ({
   labels: productChartLabels.value,
   chart: {
     type: 'donut',
@@ -654,7 +811,7 @@ const bannerChartLabels = computed(() => {
     : ['No Data']
 })
 
-const bannerChartOptions = computed(() => ({
+const bannerChartOptions = computed<ApexOptions>(() => ({
   labels: bannerChartLabels.value,
   chart: {
     type: 'donut',
@@ -700,7 +857,7 @@ const categoryChartSeries = computed(() => [
   },
 ])
 
-const categoryChartOptions = computed(() => ({
+const categoryChartOptions = computed<ApexOptions>(() => ({
   chart: {
     type: 'bar',
     toolbar: { show: false },
@@ -754,6 +911,24 @@ const recentApprovals = computed<ApprovalItemView[]>(() => {
     })
     .slice(0, 6)
 })
+
+const recentRevenueRows = computed<RevenueRow[]>(() =>
+  recentEarnings.value
+    .filter((item) => isInsideRange(item.createdAt, activeRangeDays.value))
+    .map((item, index) => ({
+      id: item._id || `${item.sourceType || 'earning'}-${index}`,
+      source: item.sourceType === 'banner' ? 'Banner Revenue' : 'Product Revenue',
+      subtitle:
+        item.sourceType === 'banner'
+          ? formatPlanType(item.meta?.planType)
+          : item.meta?.productType?.trim() || 'Paid product listing',
+      owner: getUserName(item.userId),
+      amount: Number(item.amount || 0),
+      transactionId: item.transactionId?.trim() || '-',
+      createdAt: item.createdAt,
+    }))
+    .slice(0, 10),
+)
 
 const activityRows = computed<ActivityRow[]>(() => {
   const listingRows = products.value.map((item, index) => ({
@@ -874,6 +1049,7 @@ const loadDashboard = async (isManualRefresh = false) => {
     bannersResult,
     plansResult,
     notificationsResult,
+    dashboardResult,
   ] = await Promise.allSettled([
     get<UsersResponse>(ENDPOINTS.USERS),
     fetchAllProducts(),
@@ -881,6 +1057,7 @@ const loadDashboard = async (isManualRefresh = false) => {
     get<BannerRecord[]>(ENDPOINTS.GET_BANNERS),
     get<PlansResponse>(ENDPOINTS.GET_PLANS, { includeInactive: true }),
     get<NotificationsResponse>(ENDPOINTS.GET_NOTIFICATION),
+    get<AdminDashboardResponse>(ENDPOINTS.GET_ADMIN_DASHBOARD),
   ])
 
   if (usersResult.status === 'fulfilled') {
@@ -932,6 +1109,21 @@ const loadDashboard = async (isManualRefresh = false) => {
   } else {
     notifications.value = []
     errors.push('notifications')
+  }
+
+  if (dashboardResult.status === 'fulfilled') {
+    revenueToday.value = normalizeRevenueBucket(dashboardResult.value.data?.revenue?.today)
+    revenueMonth.value = normalizeRevenueBucket(dashboardResult.value.data?.revenue?.month)
+    revenueAllTime.value = normalizeRevenueBucket(dashboardResult.value.data?.revenue?.allTime)
+    recentEarnings.value = Array.isArray(dashboardResult.value.data?.recentEarnings)
+      ? dashboardResult.value.data?.recentEarnings || []
+      : []
+  } else {
+    revenueToday.value = createEmptyRevenueBucket()
+    revenueMonth.value = createEmptyRevenueBucket()
+    revenueAllTime.value = createEmptyRevenueBucket()
+    recentEarnings.value = []
+    errors.push('dashboard')
   }
 
   loadErrors.value = errors

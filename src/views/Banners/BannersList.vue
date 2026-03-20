@@ -156,14 +156,23 @@
           />
         </div>
 
-        <div>
-          <label class="mb-1 block text-sm font-medium">From Date</label>
-          <input v-model="form.fromDate" type="datetime-local" class="h-10 w-full rounded border p-2" />
-        </div>
+        <template v-if="!isEdit">
+          <div>
+            <label class="mb-1 block text-sm font-medium">From Date</label>
+            <input v-model="form.fromDate" type="datetime-local" class="h-10 w-full rounded border p-2" />
+          </div>
 
-        <div>
-          <label class="mb-1 block text-sm font-medium">To Date</label>
-          <input v-model="form.toDate" type="datetime-local" class="h-10 w-full rounded border p-2" />
+          <div>
+            <label class="mb-1 block text-sm font-medium">To Date</label>
+            <input v-model="form.toDate" type="datetime-local" class="h-10 w-full rounded border p-2" />
+          </div>
+        </template>
+
+        <div
+          v-else
+          class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+        >
+          Existing banner schedule is read-only here. The edit API only updates banner content, location, category, image, and status.
         </div>
 
         <div>
@@ -245,8 +254,8 @@
 
               <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div class="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/50">
-                  <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Plan</p>
-                  <p class="mt-1 font-semibold text-gray-900 dark:text-gray-100">{{ detailBanner.selectedPlanId?.duration || '-' }}</p>
+                  <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Plan Type</p>
+                  <p class="mt-1 font-semibold text-gray-900 dark:text-gray-100">{{ formatPlanType(detailBanner.selectedPlanId?.type) }}</p>
                 </div>
                 <div class="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/50">
                   <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Price</p>
@@ -303,6 +312,10 @@
                   <span class="break-all text-right font-medium text-gray-900 dark:text-gray-100">{{ detailBanner.transactionId || '-' }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-3 border-b border-gray-100 py-2 dark:border-gray-800">
+                  <span class="text-gray-500 dark:text-gray-400">Revenue</span>
+                  <span class="font-medium text-gray-900 dark:text-gray-100">{{ formatPrice(detailBanner.earningAmount) }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 border-b border-gray-100 py-2 dark:border-gray-800">
                   <span class="text-gray-500 dark:text-gray-400">From Date</span>
                   <span class="font-medium text-gray-900 dark:text-gray-100">{{ formatDateTime(detailBanner.fromDate) }}</span>
                 </div>
@@ -318,6 +331,10 @@
                   <span class="font-medium text-gray-900 dark:text-gray-100">{{ formatDateTime(detailBanner.approvedAt) }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-3 border-b border-gray-100 py-2 dark:border-gray-800">
+                  <span class="text-gray-500 dark:text-gray-400">Revenue Status</span>
+                  <span class="font-medium text-gray-900 dark:text-gray-100">{{ formatRevenueStatus(detailBanner.earningStatus) }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 py-2">
                   <span class="text-gray-500 dark:text-gray-400">Created At</span>
                   <span class="font-medium text-gray-900 dark:text-gray-100">{{ formatDateTime(detailBanner.createdAt) }}</span>
                 </div>
@@ -368,6 +385,7 @@ const showDetailsModal = ref(false);
 const isEdit = ref(false);
 const editId = ref("");
 const detailBanner = ref(null);
+const originalBanner = ref(null);
 
 const isLoadingList = ref(false);
 const isSaving = ref(false);
@@ -435,6 +453,19 @@ const formatPrice = (value) => {
   const price = Number(value);
   if (Number.isNaN(price)) return String(value);
   return `Rs ${price.toLocaleString("en-IN")}`;
+};
+
+const formatPlanType = (value) => {
+  if (value === "home") return "Home";
+  if (value === "subCategory") return "Sub Category";
+  return "-";
+};
+
+const formatRevenueStatus = (value) => {
+  if (!value) return "-";
+  const normalized = String(value).replace(/[_-]+/g, " ").trim();
+  if (!normalized) return "-";
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 };
 
 const toIdString = (value) => {
@@ -596,8 +627,21 @@ const loadCategories = async () => {
 };
 
 const loadSubCategories = () => {
-  const cat = categories.value.find((c) => c._id === form.value.mainCategory);
+  const selectedMainCategoryId = toIdString(form.value.mainCategory);
+  const cat = categories.value.find(
+    (category) => toIdString(category) === selectedMainCategoryId,
+  );
+
   subCategories.value = cat ? cat.subcat || [] : [];
+
+  if (
+    form.value.subCategory &&
+    !subCategories.value.some(
+      (subCategory) => toIdString(subCategory) === toIdString(form.value.subCategory),
+    )
+  ) {
+    form.value.subCategory = "";
+  }
 };
 
 const resetForm = () => {
@@ -605,6 +649,7 @@ const resetForm = () => {
   file.value = null;
   preview.value = "";
   subCategories.value = [];
+  originalBanner.value = null;
   form.value = {
     title: "",
     status: true,
@@ -642,6 +687,16 @@ const editBanner = (banner) => {
   isEdit.value = true;
   editId.value = banner._id;
   revokePreviewUrl();
+  originalBanner.value = {
+    title: String(banner.title || ""),
+    status: !!banner.status,
+    mainCategory: String(banner.mainCategory?._id || ""),
+    subCategory: String(banner.subCategory?._id || ""),
+    latitude:
+      coordinateLabel(banner.latitude) === "-" ? "" : coordinateLabel(banner.latitude),
+    longitude:
+      coordinateLabel(banner.longitude) === "-" ? "" : coordinateLabel(banner.longitude),
+  };
 
   form.value.title = banner.title || "";
   form.value.status = !!banner.status;
@@ -689,22 +744,27 @@ const saveBanner = async () => {
     return;
   }
 
-  if (!form.value.fromDate || !form.value.toDate) {
-    setAlert("warning", "From Date and To Date are required");
-    return;
-  }
+  let parsedFromDate = null;
+  let parsedToDate = null;
 
-  const parsedFromDate = new Date(form.value.fromDate);
-  const parsedToDate = new Date(form.value.toDate);
+  if (!isEdit.value) {
+    if (!form.value.fromDate || !form.value.toDate) {
+      setAlert("warning", "From Date and To Date are required");
+      return;
+    }
 
-  if (Number.isNaN(parsedFromDate.getTime()) || Number.isNaN(parsedToDate.getTime())) {
-    setAlert("warning", "Please provide valid From Date and To Date");
-    return;
-  }
+    parsedFromDate = new Date(form.value.fromDate);
+    parsedToDate = new Date(form.value.toDate);
 
-  if (parsedToDate.getTime() <= parsedFromDate.getTime()) {
-    setAlert("warning", "To Date must be after From Date");
-    return;
+    if (Number.isNaN(parsedFromDate.getTime()) || Number.isNaN(parsedToDate.getTime())) {
+      setAlert("warning", "Please provide valid From Date and To Date");
+      return;
+    }
+
+    if (parsedToDate.getTime() <= parsedFromDate.getTime()) {
+      setAlert("warning", "To Date must be after From Date");
+      return;
+    }
   }
 
   const normalizedLatitude = normalizeCoordinateInput(form.value.latitude);
@@ -746,22 +806,67 @@ const saveBanner = async () => {
 
   try {
     const fd = new FormData();
-    if (file.value) fd.append("image", file.value);
-
-    fd.append("title", form.value.title || "");
-    fd.append("mainCategory", form.value.mainCategory);
-    if (form.value.subCategory) fd.append("subCategory", form.value.subCategory);
-    fd.append("latitude", String(latitude));
-    fd.append("longitude", String(longitude));
-    fd.append("fromDate", parsedFromDate.toISOString());
-    fd.append("toDate", parsedToDate.toISOString());
-
     let response = null;
 
     if (isEdit.value) {
-      fd.append("status", String(!!form.value.status));
+      const snapshot = originalBanner.value || {};
+      const normalizedTitle = String(form.value.title || "");
+      const normalizedMainCategory = String(form.value.mainCategory || "");
+      const normalizedSubCategory = String(form.value.subCategory || "");
+      const normalizedLatitudeValue = String(latitude);
+      const normalizedLongitudeValue = String(longitude);
+
+      if (file.value) {
+        fd.append("image", file.value);
+      }
+
+      if (normalizedTitle !== String(snapshot.title || "")) {
+        fd.append("title", normalizedTitle);
+      }
+
+      if (!!form.value.status !== !!snapshot.status) {
+        fd.append("status", String(!!form.value.status));
+      }
+
+      if (normalizedMainCategory !== String(snapshot.mainCategory || "")) {
+        if (!normalizedSubCategory) {
+          setAlert("warning", "Sub category is required when main category changes");
+          return;
+        }
+        fd.append("mainCategory", normalizedMainCategory);
+        fd.append("subCategory", normalizedSubCategory);
+      } else if (normalizedSubCategory !== String(snapshot.subCategory || "")) {
+        if (!normalizedSubCategory) {
+          setAlert("warning", "Sub category cannot be cleared from the edit API");
+          return;
+        }
+        fd.append("subCategory", normalizedSubCategory);
+      }
+
+      if (normalizedLatitudeValue !== String(snapshot.latitude || "")) {
+        fd.append("latitude", normalizedLatitudeValue);
+      }
+
+      if (normalizedLongitudeValue !== String(snapshot.longitude || "")) {
+        fd.append("longitude", normalizedLongitudeValue);
+      }
+
+      if (![...fd.keys()].length) {
+        setAlert("warning", "No banner changes detected");
+        return;
+      }
+
       response = await put(ENDPOINTS.UPDATE_BANNER(editId.value), fd);
     } else {
+      if (file.value) fd.append("image", file.value);
+
+      fd.append("title", form.value.title || "");
+      fd.append("mainCategory", form.value.mainCategory);
+      if (form.value.subCategory) fd.append("subCategory", form.value.subCategory);
+      fd.append("latitude", String(latitude));
+      fd.append("longitude", String(longitude));
+      fd.append("fromDate", parsedFromDate.toISOString());
+      fd.append("toDate", parsedToDate.toISOString());
       response = await post(ENDPOINTS.ADD_ADMIN_BANNER, fd);
     }
 

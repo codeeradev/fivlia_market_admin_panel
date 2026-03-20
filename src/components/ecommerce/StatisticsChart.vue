@@ -38,6 +38,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import type { ApexOptions } from 'apexcharts'
 
 const options = [
   { value: 'optionOne', label: 'Monthly' },
@@ -59,7 +60,7 @@ const series = ref([
   },
 ])
 
-const chartOptions = ref({
+const chartOptions = ref<ApexOptions>({
   legend: {
     show: false,
     position: 'top',
@@ -74,8 +75,8 @@ const chartOptions = ref({
     },
   },
   fill: {
+    type: 'gradient',
     gradient: {
-      enabled: true,
       opacityFrom: 0.55,
       opacityTo: 0,
     },
@@ -86,10 +87,6 @@ const chartOptions = ref({
   },
   markers: {
     size: 0,
-  },
-  labels: {
-    show: false,
-    position: 'top',
   },
   grid: {
     xaxis: {

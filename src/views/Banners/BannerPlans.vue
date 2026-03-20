@@ -8,12 +8,14 @@
           Banner Plans
         </h2>
 
+        <!--
         <button
           @click="openModal"
           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
         >
           + Add Plan
         </button>
+        -->
       </div>
 
       <div
@@ -38,7 +40,7 @@
         <BaseTable>
           <template #head>
             <th class="px-4 py-2">#</th>
-            <th class="px-4 py-2">Duration</th>
+            <th class="px-4 py-2">Placement</th>
             <th class="px-4 py-2">Price</th>
             <th class="px-4 py-2">Status</th>
             <th class="px-4 py-2">Created</th>
@@ -52,7 +54,7 @@
               class="hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               <td class="px-4 py-2">{{ index + 1 }}</td>
-              <td class="px-4 py-2 font-medium">{{ plan.duration || '-' }}</td>
+              <td class="px-4 py-2 font-medium">{{ formatPlanType(plan.type) }}</td>
               <td class="px-4 py-2">{{ formatPrice(plan.price) }}</td>
               <td class="px-4 py-2">
                 <span
@@ -95,13 +97,12 @@
         </div>
 
         <div>
-          <label class="font-medium text-sm mb-1 block">Duration</label>
-          <input
-            v-model="form.duration"
-            type="text"
-            class="border rounded p-2 h-10 w-full"
-            placeholder="e.g. 7 days"
-          />
+          <label class="font-medium text-sm mb-1 block">Placement Type</label>
+          <select v-model="form.type" class="border rounded p-2 h-10 w-full">
+            <option value="">Select placement</option>
+            <option value="home">Home</option>
+            <option value="subCategory">Sub Category</option>
+          </select>
         </div>
 
         <div>
@@ -161,7 +162,7 @@ const alert = ref({
 });
 
 const form = ref({
-  duration: "",
+  type: "",
   price: "",
   status: true,
 });
@@ -176,7 +177,7 @@ const showError = (message) => {
 
 const resetForm = () => {
   form.value = {
-    duration: "",
+    type: "",
     price: "",
     status: true,
   };
@@ -195,7 +196,7 @@ const openEditModal = (plan) => {
   editPlanId.value = plan?._id || "";
   modalError.value = "";
   form.value = {
-    duration: String(plan?.duration || ""),
+    type: String(plan?.type || ""),
     price: Number.isFinite(Number(plan?.price)) ? Number(plan.price) : "",
     status: !!plan?.status,
   };
@@ -214,6 +215,12 @@ const formatPrice = (value) => {
   const num = Number(value);
   if (!Number.isFinite(num)) return "-";
   return `Rs. ${num.toLocaleString("en-IN")}`;
+};
+
+const formatPlanType = (value) => {
+  if (value === "home") return "Home";
+  if (value === "subCategory") return "Sub Category";
+  return "-";
 };
 
 const formatDate = (value) => {
@@ -241,9 +248,9 @@ const fetchPlans = async () => {
 const savePlan = async () => {
   modalError.value = "";
 
-  const duration = String(form.value.duration || "").trim();
-  if (!duration) {
-    modalError.value = "Duration is required";
+  const type = String(form.value.type || "").trim();
+  if (!type) {
+    modalError.value = "Placement type is required";
     return;
   }
 
@@ -263,7 +270,7 @@ const savePlan = async () => {
     }
 
     const payload = {
-      duration,
+      type,
       price: parsedPrice,
       status: !!form.value.status,
     };

@@ -38,6 +38,7 @@ export const ENDPOINTS = {
 
   GET_CITY: '/get-city',
 
+  GET_ADMIN_DASHBOARD: '/admin/dashboard',
   GET_SETTING: '/admin/get-setting',
   UPDATE_SETTING: '/admin/update-setting',
   ADMIN_LOGIN: '/admin/login',
