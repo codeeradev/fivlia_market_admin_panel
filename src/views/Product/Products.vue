@@ -106,6 +106,17 @@
           </div>
         </div>
 
+        <div>
+          <label class="font-medium text-sm mb-1 block">Featured Product</label>
+          <select
+            v-model="editForm.paymentType"
+            class="border rounded p-2 h-10 w-full"
+          >
+            <option value="free">Regular Product</option>
+            <option value="paid">Featured Product</option>
+          </select>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="font-medium text-sm mb-1 block">Category</label>
@@ -222,6 +233,7 @@ const editForm = ref({
   description: "",
   price: "",
   address: "",
+  paymentType: "",
   category: "",
   subCategory: "",
 })
@@ -302,6 +314,7 @@ function closeEditModal() {
     description: "",
     price: "",
     address: "",
+    paymentType: "",
     category: "",
     subCategory: "",
   }
@@ -315,6 +328,7 @@ function openEditModal(product) {
     description: product?.description || "",
     price: product?.price !== undefined && product?.price !== null ? String(product.price) : "",
     address: product?.address || "",
+    paymentType: product?.paymentType === "paid" ? "paid" : "free",
     category: normalizeId(product?.category || product?.mainCategory),
     subCategory: normalizeId(product?.subCategory),
   }
@@ -351,6 +365,7 @@ async function saveProduct() {
     if (editForm.value.description?.trim()) fd.append("description", editForm.value.description.trim())
     if (editForm.value.price !== "") fd.append("price", String(editForm.value.price))
     if (editForm.value.address?.trim()) fd.append("address", editForm.value.address.trim())
+    if (editForm.value.paymentType?.trim()) fd.append("paymentType", editForm.value.paymentType.trim())
     if (editForm.value.category) fd.append("category", editForm.value.category)
     if (editForm.value.subCategory) fd.append("subCategory", editForm.value.subCategory)
 
