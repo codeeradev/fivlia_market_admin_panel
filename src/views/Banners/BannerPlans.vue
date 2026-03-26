@@ -100,8 +100,13 @@
           <label class="font-medium text-sm mb-1 block">Placement Type</label>
           <select v-model="form.type" class="border rounded p-2 h-10 w-full">
             <option value="">Select placement</option>
-            <option value="home">Home</option>
-            <option value="subCategory">Sub Category</option>
+            <option
+              v-for="option in bannerPlanTypeOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
           </select>
         </div>
 
@@ -140,13 +145,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { computed, ref, onMounted } from "vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import BaseTable from "@/components/common/BaseTable.vue";
 import BaseModal from "@/components/common/BaseModal.vue";
 import { get, post } from "@/apis/apiClient";
 import { ENDPOINTS } from "@/apis/endpoint";
+import {
+  BANNER_PLAN_TYPE_OPTIONS,
+  formatBannerPlanType,
+  normalizeBannerPlanType,
+} from "@/utils/bannerPlanTypes";
 
 const plans = ref([]);
 const loading = ref(true);
@@ -165,6 +175,24 @@ const form = ref({
   type: "",
   price: "",
   status: true,
+});
+
+const formatPlanType = formatBannerPlanType;
+const bannerPlanTypeOptions = computed(() => {
+  const values = new Set(BANNER_PLAN_TYPE_OPTIONS.map((option) => option.value));
+
+  for (const plan of plans.value) {
+    const type = normalizeBannerPlanType(plan?.type);
+    if (type) values.add(type);
+  }
+
+  const currentType = normalizeBannerPlanType(form.value.type);
+  if (currentType) values.add(currentType);
+
+  return Array.from(values).map((value) => ({
+    value,
+    label: value,
+  }));
 });
 
 const showSuccess = (message) => {
@@ -196,7 +224,7 @@ const openEditModal = (plan) => {
   editPlanId.value = plan?._id || "";
   modalError.value = "";
   form.value = {
-    type: String(plan?.type || ""),
+    type: normalizeBannerPlanType(plan?.type) || "",
     price: Number.isFinite(Number(plan?.price)) ? Number(plan.price) : "",
     status: !!plan?.status,
   };
@@ -217,12 +245,6 @@ const formatPrice = (value) => {
   return `Rs. ${num.toLocaleString("en-IN")}`;
 };
 
-const formatPlanType = (value) => {
-  if (value === "home") return "Home";
-  if (value === "subCategory") return "Sub Category";
-  return "-";
-};
-
 const formatDate = (value) => {
   if (!value) return "-";
   const parsed = new Date(value);
@@ -235,7 +257,12 @@ const fetchPlans = async () => {
 
   try {
     const res = await get(ENDPOINTS.GET_PLANS, { includeInactive: true });
-    plans.value = Array.isArray(res?.data) ? res.data : [];
+    plans.value = Array.isArray(res?.data)
+      ? res.data.map((plan) => ({
+          ...plan,
+          type: normalizeBannerPlanType(plan?.type) || "",
+        }))
+      : [];
   } catch (error) {
     console.error(error);
     plans.value = [];
@@ -248,7 +275,7 @@ const fetchPlans = async () => {
 const savePlan = async () => {
   modalError.value = "";
 
-  const type = String(form.value.type || "").trim();
+  const type = normalizeBannerPlanType(form.value.type);
   if (!type) {
     modalError.value = "Placement type is required";
     return;

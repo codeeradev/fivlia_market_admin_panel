@@ -156,25 +156,6 @@
           />
         </div>
 
-        <template v-if="!isEdit">
-          <div>
-            <label class="mb-1 block text-sm font-medium">From Date</label>
-            <input v-model="form.fromDate" type="datetime-local" class="h-10 w-full rounded border p-2" />
-          </div>
-
-          <div>
-            <label class="mb-1 block text-sm font-medium">To Date</label>
-            <input v-model="form.toDate" type="datetime-local" class="h-10 w-full rounded border p-2" />
-          </div>
-        </template>
-
-        <div
-          v-else
-          class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
-        >
-          Existing banner schedule is read-only here. The edit API only updates banner content, location, category, image, and status.
-        </div>
-
         <div>
           <label class="mb-1 block text-sm font-medium">Image</label>
           <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
@@ -294,11 +275,11 @@
             <div class="space-y-1 text-sm">
               <div class="flex items-center justify-between gap-3 border-b border-gray-100 py-2 dark:border-gray-800">
                 <span class="text-gray-500 dark:text-gray-400">Name</span>
-                <span class="font-medium text-gray-900 dark:text-gray-100">{{ detailBanner.userId?.name || '-' }}</span>
+                <span class="font-medium text-gray-900 dark:text-gray-100">{{ ownerNameLabel(detailBanner) }}</span>
               </div>
               <div class="flex items-center justify-between gap-3 py-2">
                 <span class="text-gray-500 dark:text-gray-400">Mobile</span>
-                <span class="font-medium text-gray-900 dark:text-gray-100">{{ detailBanner.userId?.mobileNumber || '-' }}</span>
+                <span class="font-medium text-gray-900 dark:text-gray-100">{{ ownerMobileLabel(detailBanner) }}</span>
               </div>
             </div>
           </div>
@@ -373,6 +354,7 @@ import BaseTable from "@/components/common/BaseTable.vue";
 import { get, post, put } from "@/apis/apiClient";
 import { ENDPOINTS } from "@/apis/endpoint";
 import { useAppAlert } from "@/composables/useAppAlert";
+import { formatBannerPlanType } from "@/utils/bannerPlanTypes";
 
 const { setAlert } = useAppAlert();
 
@@ -401,13 +383,12 @@ const form = ref({
   subCategory: "",
   latitude: "",
   longitude: "",
-  fromDate: "",
-  toDate: "",
 });
 
 const IMAGE_URL = import.meta.env.VITE_IMAGEURL || "";
 const REQUIRED_BANNER_WIDTH = 1280;
 const REQUIRED_BANNER_HEIGHT = 540;
+const formatPlanType = formatBannerPlanType;
 
 const getErrorMessage = (error, fallbackMessage) =>
   error?.response?.data?.message || fallbackMessage;
@@ -455,12 +436,6 @@ const formatPrice = (value) => {
   return `Rs ${price.toLocaleString("en-IN")}`;
 };
 
-const formatPlanType = (value) => {
-  if (value === "home") return "Home";
-  if (value === "subCategory") return "Sub Category";
-  return "-";
-};
-
 const formatRevenueStatus = (value) => {
   if (!value) return "-";
   const normalized = String(value).replace(/[_-]+/g, " ").trim();
@@ -472,6 +447,19 @@ const toIdString = (value) => {
   if (!value) return "";
   if (typeof value === "string") return value;
   return String(value?._id || value?.id || "");
+};
+
+const isAdminAddedBanner = (banner) =>
+  String(banner?.addedBy || "").trim().toLowerCase() === "admin";
+
+const ownerNameLabel = (banner) => {
+  if (isAdminAddedBanner(banner)) return "Admin";
+  return banner?.userId?.name || "-";
+};
+
+const ownerMobileLabel = (banner) => {
+  if (isAdminAddedBanner(banner)) return "-";
+  return banner?.userId?.mobileNumber || "-";
 };
 
 const subCategoryLabel = (subCategory, mainCategory) => {
@@ -657,8 +645,6 @@ const resetForm = () => {
     subCategory: "",
     latitude: "",
     longitude: "",
-    fromDate: "",
-    toDate: "",
   };
 };
 
@@ -667,19 +653,6 @@ const openModal = () => {
   editId.value = "";
   resetForm();
   showModal.value = true;
-};
-
-const formatDateTimeLocal = (value) => {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const pad = (n) => String(n).padStart(2, "0");
-  const year = date.getFullYear();
-  const month = pad(date.getMonth() + 1);
-  const day = pad(date.getDate());
-  const hours = pad(date.getHours());
-  const minutes = pad(date.getMinutes());
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
 const editBanner = (banner) => {
@@ -704,8 +677,6 @@ const editBanner = (banner) => {
   form.value.subCategory = banner.subCategory?._id || "";
   form.value.latitude = coordinateLabel(banner.latitude) === "-" ? "" : coordinateLabel(banner.latitude);
   form.value.longitude = coordinateLabel(banner.longitude) === "-" ? "" : coordinateLabel(banner.longitude);
-  form.value.fromDate = formatDateTimeLocal(banner.fromDate);
-  form.value.toDate = formatDateTimeLocal(banner.toDate);
 
   preview.value = imgUrl(banner.image);
   loadSubCategories();
@@ -742,29 +713,6 @@ const saveBanner = async () => {
   if (!form.value.mainCategory) {
     setAlert("warning", "Main category is required");
     return;
-  }
-
-  let parsedFromDate = null;
-  let parsedToDate = null;
-
-  if (!isEdit.value) {
-    if (!form.value.fromDate || !form.value.toDate) {
-      setAlert("warning", "From Date and To Date are required");
-      return;
-    }
-
-    parsedFromDate = new Date(form.value.fromDate);
-    parsedToDate = new Date(form.value.toDate);
-
-    if (Number.isNaN(parsedFromDate.getTime()) || Number.isNaN(parsedToDate.getTime())) {
-      setAlert("warning", "Please provide valid From Date and To Date");
-      return;
-    }
-
-    if (parsedToDate.getTime() <= parsedFromDate.getTime()) {
-      setAlert("warning", "To Date must be after From Date");
-      return;
-    }
   }
 
   const normalizedLatitude = normalizeCoordinateInput(form.value.latitude);
@@ -865,8 +813,6 @@ const saveBanner = async () => {
       if (form.value.subCategory) fd.append("subCategory", form.value.subCategory);
       fd.append("latitude", String(latitude));
       fd.append("longitude", String(longitude));
-      fd.append("fromDate", parsedFromDate.toISOString());
-      fd.append("toDate", parsedToDate.toISOString());
       response = await post(ENDPOINTS.ADD_ADMIN_BANNER, fd);
     }
 

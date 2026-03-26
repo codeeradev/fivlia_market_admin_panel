@@ -325,6 +325,7 @@ import VueApexCharts from 'vue3-apexcharts'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import { ENDPOINTS } from '@/apis/endpoint'
 import { get } from '@/apis/apiClient'
+import { formatBannerPlanType } from '@/utils/bannerPlanTypes'
 
 type RangeKey = '7d' | '30d' | '90d' | 'all'
 type ProductStatus = 'pending' | 'rejected' | 'active' | 'sold' | 'expired'
@@ -368,7 +369,7 @@ interface NotificationRecord {
 
 interface BannerPlanRecord {
   _id?: string
-  type?: 'home' | 'subCategory'
+  type?: string
   price?: number
   status?: boolean
   createdAt?: string
@@ -429,7 +430,7 @@ interface EarningRecord {
   userId?: UserRef
   createdAt?: string
   meta?: {
-    planType?: 'home' | 'subCategory'
+    planType?: string
     productType?: string
   }
 }
@@ -612,11 +613,8 @@ const formatCurrency = (value: number): string =>
     maximumFractionDigits: 0,
   }).format(value)
 
-const formatPlanType = (value?: string): string => {
-  if (value === 'home') return 'Home Banner'
-  if (value === 'subCategory') return 'Sub Category Banner'
-  return ''
-}
+const formatPlanType = (value?: string): string =>
+  formatBannerPlanType(value, { fallback: '', suffix: 'Banner' })
 
 const formatDateTime = (value?: string | Date | null): string => {
   const parsed = parseDate(value || null)
