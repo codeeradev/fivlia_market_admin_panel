@@ -170,6 +170,7 @@
 
         <div>
           <label class="font-medium text-sm mb-1 block">Replace Images</label>
+          <p class="text-xs text-gray-600 mb-2">Recommended image size: 500 x 500 px.</p>
           <input
             type="file"
             accept="image/*"
