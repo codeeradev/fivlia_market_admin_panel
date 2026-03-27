@@ -135,6 +135,44 @@
           </select>
         </div>
 
+        <div>
+          <label class="font-medium text-sm">Screen</label>
+          <select
+            v-model="form.screen"
+            @change="onScreenChange"
+            class="border rounded p-2 h-10 w-full"
+          >
+            <option value="">No screen redirect</option>
+            <option value="product">Product</option>
+            <option value="category">Category</option>
+          </select>
+        </div>
+
+        <div v-if="form.screen">
+          <label class="font-medium text-sm">
+            {{ form.screen === "product" ? "Select Product" : "Select Category" }}
+          </label>
+          <select
+            v-model="form.refId"
+            class="border rounded p-2 h-10 w-full"
+          >
+            <option value="">
+              {{
+                form.screen === "product"
+                  ? "Choose a product"
+                  : "Choose a category"
+              }}
+            </option>
+            <option
+              v-for="option in selectedScreenOptions"
+              :key="option._id"
+              :value="option._id"
+            >
+              {{ option.name || option.title || "Untitled" }}
+            </option>
+          </select>
+        </div>
+
         <!-- IMAGE -->
         <div>
           <label class="font-medium text-sm">Image</label>
@@ -173,7 +211,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { computed, ref, onMounted } from "vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import BaseModal from "@/components/common/BaseModal.vue";
@@ -187,6 +225,8 @@ const IMAGE_BASE = import.meta.env.VITE_IMAGEURL || "";
 /* STATE */
 const notifications = ref([]);
 const cities = ref([]);
+const products = ref([]);
+const categories = ref([]);
 const loading = ref(true);
 const saving = ref(false);
 const alert = ref({ message: "", type: "success" });
@@ -201,8 +241,22 @@ const form = ref({
   title: "",
   description: "",
   city: "everyone",
+  screen: "",
+  refId: "",
   image: null,
 });
+
+const selectedScreenOptions = computed(() => {
+  if (form.value.screen === "product") return products.value;
+  if (form.value.screen === "category") return categories.value;
+  return [];
+});
+
+const normalizeSingleValue = (value, fallback = "") => {
+  if (Array.isArray(value)) return normalizeSingleValue(value[0], fallback);
+  if (value && typeof value === "object") return value._id || value.id || fallback;
+  return value || fallback;
+};
 
 /* IMAGE URL FIX */
 const imageUrl = (path) => {
@@ -222,9 +276,31 @@ const loadCities = async () => {
   cities.value = await get(ENDPOINTS.GET_CITY);
 };
 
+const loadProducts = async () => {
+  try {
+    const res = await get(`${ENDPOINTS.PRODUCTS}?page=1&limit=1000`);
+    products.value = res?.product || [];
+  } catch (error) {
+    console.error("Failed to load products", error);
+    products.value = [];
+  }
+};
+
+const loadCategories = async () => {
+  try {
+    const res = await get(ENDPOINTS.CATEGORY.GET_ALL);
+    categories.value = res?.categories || [];
+  } catch (error) {
+    console.error("Failed to load categories", error);
+    categories.value = [];
+  }
+};
+
 onMounted(() => {
   loadNotifications();
   loadCities();
+  loadProducts();
+  loadCategories();
 });
 
 /* IMAGE */
@@ -239,10 +315,13 @@ const onImageChange = (e) => {
 const openModal = () => {
   isEdit.value = false;
   editId.value = "";
+  alert.value = { message: "", type: "success" };
   form.value = {
     title: "",
     description: "",
     city: "everyone",
+    screen: "",
+    refId: "",
     image: null,
   };
   imagePreview.value = null;
@@ -252,10 +331,13 @@ const openModal = () => {
 const editNotification = (n) => {
   isEdit.value = true;
   editId.value = n._id;
+  alert.value = { message: "", type: "success" };
 
   form.value.title = n.title;
   form.value.description = n.description;
-  form.value.city = n.city?.length ? n.city : "everyone";
+  form.value.city = normalizeSingleValue(n.city, "everyone");
+  form.value.screen = n.screen || "";
+  form.value.refId = normalizeSingleValue(n.refId);
   form.value.image = null;
 
   imagePreview.value = n.image ? imageUrl(n.image) : null;
@@ -263,31 +345,61 @@ const editNotification = (n) => {
   showModal.value = true;
 };
 
+const onScreenChange = () => {
+  form.value.refId = "";
+};
+
 /* SAVE */
 const saveNotification = async () => {
   saving.value = true;
 
-  const fd = new FormData();
-  fd.append("title", form.value.title);
-  fd.append("description", form.value.description);
-
-  if (form.value.city !== "everyone") {
-    fd.append("city", form.value.city);
+  if (form.value.screen && !form.value.refId) {
+    alert.value = {
+      message: `Please select a ${form.value.screen} before saving.`,
+      type: "error",
+    };
+    saving.value = false;
+    return;
   }
 
-  if (form.value.image) {
-    fd.append("image", form.value.image);
-  }
+  try {
+    const fd = new FormData();
+    fd.append("title", form.value.title);
+    fd.append("description", form.value.description);
+    fd.append("screen", form.value.screen || "");
+    fd.append("refId", form.value.refId || "");
 
-  if (isEdit.value) {
-    await post(ENDPOINTS.EDIT_NOTIFICATION(editId.value), fd);
-  } else {
-    await post(ENDPOINTS.CREATE_NOTIFICATION, fd);
-  }
+    if (form.value.city !== "everyone") {
+      fd.append("city", form.value.city);
+    }
 
-  showModal.value = false;
-  saving.value = false;
-  loadNotifications();
+    if (form.value.image) {
+      fd.append("image", form.value.image);
+    }
+
+    if (isEdit.value) {
+      await post(ENDPOINTS.EDIT_NOTIFICATION(editId.value), fd);
+    } else {
+      await post(ENDPOINTS.CREATE_NOTIFICATION, fd);
+    }
+
+    alert.value = {
+      message: isEdit.value
+        ? "Notification updated successfully"
+        : "Notification created successfully",
+      type: "success",
+    };
+    showModal.value = false;
+    await loadNotifications();
+  } catch (error) {
+    console.error("Failed to save notification", error);
+    alert.value = {
+      message: error?.response?.data?.message || "Failed to save notification",
+      type: "error",
+    };
+  } finally {
+    saving.value = false;
+  }
 };
 
 /* SEND */

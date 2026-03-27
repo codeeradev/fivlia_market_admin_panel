@@ -103,6 +103,44 @@
           </div>
         </div>
 
+        <div class="mt-6 grid gap-4 lg:grid-cols-2">
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
+            <div class="mb-3">
+              <label class="mb-1 block text-sm font-medium text-gray-900 dark:text-gray-100">
+                Terms &amp; Conditions
+              </label>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Update the terms and conditions content shown in the app.
+              </p>
+            </div>
+
+            <textarea
+              v-model="adminSetting.term_and_conditons"
+              rows="8"
+              placeholder="Enter terms and conditions"
+              class="w-full resize-y rounded border p-3"
+            ></textarea>
+          </div>
+
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
+            <div class="mb-3">
+              <label class="mb-1 block text-sm font-medium text-gray-900 dark:text-gray-100">
+                Safety &amp; Policy
+              </label>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Update the safety and policy content shown in the app.
+              </p>
+            </div>
+
+            <textarea
+              v-model="adminSetting.safety_and_policy"
+              rows="8"
+              placeholder="Enter safety and policy content"
+              class="w-full resize-y rounded border p-3"
+            ></textarea>
+          </div>
+        </div>
+
         <div class="flex justify-end mt-6">
           <button
             @click="saveAdminSetting"
@@ -171,6 +209,7 @@ const adminSetting = reactive({
   password: "",
   image: "",
   term_and_conditons: "",
+  safety_and_policy: "",
   radius: "",
   productPrice: "",
 });
@@ -201,6 +240,7 @@ const loadAdminSetting = async () => {
       adminSetting.password = "";
       adminSetting.image = res.data.image ?? "";
       adminSetting.term_and_conditons = res.data.term_and_conditons ?? "";
+      adminSetting.safety_and_policy = res.data.safety_and_policy ?? "";
       adminSetting.radius = res.data.radius ?? "";
       adminSetting.productPrice = res.data.productPrice ?? "";
       selectedFileName.value = adminSetting.image
@@ -219,6 +259,8 @@ const saveAdminSetting = async () => {
     const payload = new FormData();
     payload.append("name", adminSetting.name || "");
     payload.append("email", adminSetting.email || "");
+    payload.append("term_and_conditons", adminSetting.term_and_conditons || "");
+    payload.append("safety_and_policy", adminSetting.safety_and_policy || "");
 
     const normalizedRadius = String(adminSetting.radius ?? "").trim();
     if (normalizedRadius) {

@@ -194,6 +194,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { icon: GridIcon, name: "Dashboard", subItems: [{ name: "Ecommerce", path: "/", pro: false }] },
       { icon: CalenderIcon, name: "Category", path: "/category" },
+      { icon: ListIcon, name: "Products", path: "/products" },
       {
         icon: PageIcon,
         name: "Banners",
@@ -205,7 +206,6 @@ const menuGroups: MenuGroup[] = [
       { icon: PageIcon, name: "Notification", path: "/notification" },
       { icon: PageIcon, name: "Approvals", path: "/approvals" },
       { icon: UserCircleIcon, name: "Users", path: "/users" },
-      { icon: ListIcon, name: "Products", path: "/products" },
     ],
   },
 
