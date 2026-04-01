@@ -101,6 +101,24 @@
               class="border p-2 rounded"
             />
           </div>
+
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-900 dark:text-gray-100">
+                Razorpay Key
+              </label>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Store the Razorpay key used by the admin panel and app integrations.
+              </p>
+            </div>
+
+            <input
+              v-model="adminSetting.razor_pay_key"
+              type="text"
+              placeholder="Enter Razorpay key"
+              class="border p-2 rounded"
+            />
+          </div>
         </div>
 
         <div class="mt-6 grid gap-4 lg:grid-cols-2">
@@ -212,6 +230,7 @@ const adminSetting = reactive({
   safety_and_policy: "",
   radius: "",
   productPrice: "",
+  razor_pay_key: "",
 });
 
 const imageUrl = (path: string) => {
@@ -243,6 +262,7 @@ const loadAdminSetting = async () => {
       adminSetting.safety_and_policy = res.data.safety_and_policy ?? "";
       adminSetting.radius = res.data.radius ?? "";
       adminSetting.productPrice = res.data.productPrice ?? "";
+      adminSetting.razor_pay_key = res.data.razor_pay_key ?? "";
       selectedFileName.value = adminSetting.image
         ? "Current photo loaded"
         : "No profile photo selected";
@@ -261,6 +281,7 @@ const saveAdminSetting = async () => {
     payload.append("email", adminSetting.email || "");
     payload.append("term_and_conditons", adminSetting.term_and_conditons || "");
     payload.append("safety_and_policy", adminSetting.safety_and_policy || "");
+    payload.append("razor_pay_key", adminSetting.razor_pay_key || "");
 
     const normalizedRadius = String(adminSetting.radius ?? "").trim();
     if (normalizedRadius) {
