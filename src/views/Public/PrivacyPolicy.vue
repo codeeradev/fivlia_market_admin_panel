@@ -126,12 +126,6 @@ const sections: PolicySection[] = [
     ],
   },
   {
-    title: "Children's Privacy",
-    paragraphs: [
-      'Fivlia Connect is not intended for individuals under the age of 13. We do not knowingly collect personal information from children. If such information is discovered, it will be removed from our systems.',
-    ],
-  },
-  {
     title: 'Third Party Services',
     paragraphs: [
       'The application may include links or integrations with third-party services. Fivlia Connect is not responsible for the privacy practices or content of those external services.',
