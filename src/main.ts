@@ -10,10 +10,20 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import VueApexCharts from 'vue3-apexcharts'
+import PrivacyPolicy from './views/Public/PrivacyPolicy.vue'
 
-const app = createApp(App)
+const privacyPolicyPaths = new Set([
+  '/privacy-policy',
+  '/privacy-policy/',
+  '/privacy-policy/index.html',
+])
+const isPrivacyPolicyEntry = privacyPolicyPaths.has(window.location.pathname)
 
-app.use(router)
-app.use(VueApexCharts)
+const app = createApp(isPrivacyPolicyEntry ? PrivacyPolicy : App)
+
+if (!isPrivacyPolicyEntry) {
+  app.use(router)
+  app.use(VueApexCharts)
+}
 
 app.mount('#app')

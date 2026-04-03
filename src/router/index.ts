@@ -121,6 +121,20 @@ const router = createRouter({
       path: '/admin-settings',
       name: 'Profile & Settings',
       component: () => import('../views/adminSettings/AdminSettings.vue'),
+      meta: {
+        title: 'Profile & Settings',
+      },
+    },
+    {
+      path: '/privacy-policy',
+      alias: ['/privacy-policy/', '/privacy-policy/index.html'],
+      name: 'Privacy Policy',
+      component: () => import('../views/Public/PrivacyPolicy.vue'),
+      meta: {
+        title: 'Privacy Policy',
+        publicRoute: true,
+        standalone: true,
+      },
     },
 
     {
@@ -129,6 +143,7 @@ const router = createRouter({
       component: () => import('../views/Errors/FourZeroFour.vue'),
       meta: {
         title: '404 Error',
+        publicRoute: true,
       },
     },
 
@@ -138,6 +153,7 @@ const router = createRouter({
       component: () => import('../views/Auth/Signin.vue'),
       meta: {
         title: 'Signin',
+        publicRoute: true,
       },
     },
   ],
@@ -146,12 +162,21 @@ const router = createRouter({
 export default router
 
 router.beforeEach((to, from, next) => {
-  document.title = `Fivlia Connect ${to.meta.title || ''} | Fivlia Connect Dashboard`
+  const pageTitle =
+    typeof to.meta.title === 'string'
+      ? to.meta.title
+      : typeof to.name === 'string'
+        ? to.name
+        : 'Dashboard'
+  const isPublicRoute = Boolean(to.meta.publicRoute)
 
-  const publicRoutes = new Set(['/signin', '/error-404'])
+  document.title = isPublicRoute
+    ? `${pageTitle} | Fivlia Connect`
+    : `Fivlia Connect ${pageTitle} | Fivlia Connect Dashboard`
+
   const isAuthenticated = hasValidAdminSession()
 
-  if (publicRoutes.has(to.path)) {
+  if (isPublicRoute) {
     if (to.path === '/signin' && isAuthenticated) {
       next('/')
       return
