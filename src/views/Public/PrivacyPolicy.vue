@@ -86,7 +86,6 @@ const sections: PolicySection[] = [
       'This may include personal information such as your name, email address, phone number, profile picture, and other information you choose to provide while creating an account or posting listings.',
       'Users may also provide listing details such as product titles, descriptions, prices, photos, and category information when posting items for sale. This information is publicly visible to other users within the platform.',
       'To improve the marketplace experience, the application may collect approximate location information from your device. Location information is used to display listings and users within approximately a 20 kilometer radius to help facilitate local buying and selling.',
-      'The application may also automatically collect certain technical information such as device type, operating system, app version, IP address, and usage information for analytics and security purposes.',
     ],
   },
   {
