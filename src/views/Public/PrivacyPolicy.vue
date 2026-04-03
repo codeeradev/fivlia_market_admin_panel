@@ -101,7 +101,6 @@ const sections: PolicySection[] = [
       'Fivlia Connect does not sell or rent personal information to third parties.',
       'Some information becomes visible to other users when you create listings or interact within the platform. This may include your profile name, profile picture, listing details, and approximate location of listings.',
       'Information may be shared with trusted service providers that assist in operating the platform, such as hosting providers, analytics services, and security monitoring services. These service providers are required to handle data responsibly and only for the purpose of supporting the service.',
-      'Information may also be disclosed if required by law, regulation, legal process, or governmental request.',
     ],
   },
   {
@@ -111,23 +110,15 @@ const sections: PolicySection[] = [
     ],
   },
   {
-    title: 'User Responsibilities',
-    paragraphs: [
-      'Users are responsible for maintaining the confidentiality of their account credentials and ensuring that the information they provide on the platform is accurate and lawful.',
-      'Fivlia Connect operates as a platform connecting buyers and sellers and is not responsible for transactions, disputes, or agreements made between users.',
-    ],
-  },
-  {
     title: 'Data Retention',
     paragraphs: [
-      'User information may be retained as long as necessary to provide services, comply with legal obligations, resolve disputes, and enforce platform policies.',
-      'Users may request deletion of their account and associated data at any time by contacting support.',
+      'User information is retained only as long as necessary to provide services and comply with legal obligations. Users may request account deletion by contacting support.',
     ],
   },
   {
     title: 'Third Party Services',
     paragraphs: [
-      'The application may include links or integrations with third-party services. Fivlia Connect is not responsible for the privacy practices or content of those external services.',
+      'Fivlia Connect may use trusted third-party services such as analytics, hosting, or authentication providers to operate the platform.',
     ],
   },
   {
