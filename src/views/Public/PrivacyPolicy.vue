@@ -48,10 +48,10 @@
               <div class="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Email</p>
                 <a
-                  href="mailto:support@fivlia.com"
+                  href="mailto:fivliaindia@gmail.com"
                   class="mt-2 inline-flex text-base font-medium text-slate-900 transition hover:text-emerald-700"
                 >
-                  support@fivlia.com
+                  fivliaindia@gmail.com
                 </a>
               </div>
               <div class="rounded-2xl border border-emerald-200 bg-white px-4 py-4">
