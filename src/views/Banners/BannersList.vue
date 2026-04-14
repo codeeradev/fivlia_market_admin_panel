@@ -134,27 +134,7 @@
           </select>
         </div>
 
-        <div>
-          <label class="mb-1 block text-sm font-medium">Latitude</label>
-          <input
-            v-model="form.latitude"
-            type="number"
-            step="any"
-            placeholder="e.g. 28.6139"
-            class="h-10 w-full rounded border p-2"
-          />
-        </div>
 
-        <div>
-          <label class="mb-1 block text-sm font-medium">Longitude</label>
-          <input
-            v-model="form.longitude"
-            type="number"
-            step="any"
-            placeholder="e.g. 77.2090"
-            class="h-10 w-full rounded border p-2"
-          />
-        </div>
 
         <div>
           <label class="mb-1 block text-sm font-medium">Image</label>
@@ -265,17 +245,9 @@
                 <span class="text-gray-500 dark:text-gray-400">Main Category</span>
                 <span class="font-medium text-gray-900 dark:text-gray-100">{{ detailBanner.mainCategory?.name || '-' }}</span>
               </div>
-              <div class="flex items-center justify-between gap-3 border-b border-gray-100 py-2 dark:border-gray-800">
+              <div class="flex items-center justify-between gap-3 py-2">
                 <span class="text-gray-500 dark:text-gray-400">Sub Category</span>
                 <span class="font-medium text-gray-900 dark:text-gray-100">{{ subCategoryLabel(detailBanner.subCategory, detailBanner.mainCategory) }}</span>
-              </div>
-              <div class="flex items-center justify-between gap-3 py-2">
-                <span class="text-gray-500 dark:text-gray-400">Latitude</span>
-                <span class="font-medium text-gray-900 dark:text-gray-100">{{ coordinateLabel(detailBanner.latitude) }}</span>
-              </div>
-              <div class="flex items-center justify-between gap-3 py-2">
-                <span class="text-gray-500 dark:text-gray-400">Longitude</span>
-                <span class="font-medium text-gray-900 dark:text-gray-100">{{ coordinateLabel(detailBanner.longitude) }}</span>
               </div>
             </div>
           </div>
@@ -391,8 +363,6 @@ const form = ref({
   status: true,
   mainCategory: "",
   subCategory: "",
-  latitude: "",
-  longitude: "",
   selectedPlanId: "",
 });
 
@@ -502,14 +472,6 @@ const subCategoryLabel = (subCategory, mainCategory) => {
   );
   return matchedSubCategory?.name || "-";
 };
-
-const coordinateLabel = (value) => {
-  if (value === undefined || value === null || value === "") return "-";
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? String(parsed) : String(value);
-};
-
-const normalizeCoordinateInput = (value) => String(value ?? "").trim();
 
 const revokePreviewUrl = () => {
   if (preview.value && preview.value.startsWith("blob:")) {
@@ -664,8 +626,6 @@ const resetForm = () => {
     status: true,
     mainCategory: "",
     subCategory: "",
-    latitude: "",
-    longitude: "",
     selectedPlanId: "",
   };
 };
@@ -687,18 +647,12 @@ const editBanner = (banner) => {
     status: !!banner.status,
     mainCategory: String(banner.mainCategory?._id || ""),
     subCategory: String(banner.subCategory?._id || ""),
-    latitude:
-      coordinateLabel(banner.latitude) === "-" ? "" : coordinateLabel(banner.latitude),
-    longitude:
-      coordinateLabel(banner.longitude) === "-" ? "" : coordinateLabel(banner.longitude),
   };
 
   form.value.title = banner.title || "";
   form.value.status = !!banner.status;
   form.value.mainCategory = banner.mainCategory?._id || "";
   form.value.subCategory = banner.subCategory?._id || "";
-  form.value.latitude = coordinateLabel(banner.latitude) === "-" ? "" : coordinateLabel(banner.latitude);
-  form.value.longitude = coordinateLabel(banner.longitude) === "-" ? "" : coordinateLabel(banner.longitude);
 
   preview.value = imgUrl(banner.image);
   loadSubCategories();
@@ -737,27 +691,6 @@ const saveBanner = async () => {
     return;
   }
 
-  const normalizedLatitude = normalizeCoordinateInput(form.value.latitude);
-  const normalizedLongitude = normalizeCoordinateInput(form.value.longitude);
-
-  if (!normalizedLatitude || !normalizedLongitude) {
-    setAlert("warning", "Latitude and Longitude are required");
-    return;
-  }
-
-  const latitude = Number(normalizedLatitude);
-  const longitude = Number(normalizedLongitude);
-
-  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
-    setAlert("warning", "Latitude must be a valid number between -90 and 90");
-    return;
-  }
-
-  if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-    setAlert("warning", "Longitude must be a valid number between -180 and 180");
-    return;
-  }
-
   if (!isEdit.value && !form.value.selectedPlanId) {
     setAlert("warning", "Banner plan is required");
     return;
@@ -788,8 +721,6 @@ const saveBanner = async () => {
       const normalizedTitle = String(form.value.title || "");
       const normalizedMainCategory = String(form.value.mainCategory || "");
       const normalizedSubCategory = String(form.value.subCategory || "");
-      const normalizedLatitudeValue = String(latitude);
-      const normalizedLongitudeValue = String(longitude);
 
       if (file.value) {
         fd.append("image", file.value);
@@ -818,14 +749,6 @@ const saveBanner = async () => {
         fd.append("subCategory", normalizedSubCategory);
       }
 
-      if (normalizedLatitudeValue !== String(snapshot.latitude || "")) {
-        fd.append("latitude", normalizedLatitudeValue);
-      }
-
-      if (normalizedLongitudeValue !== String(snapshot.longitude || "")) {
-        fd.append("longitude", normalizedLongitudeValue);
-      }
-
       if (![...fd.keys()].length) {
         setAlert("warning", "No banner changes detected");
         return;
@@ -838,8 +761,6 @@ const saveBanner = async () => {
       fd.append("title", form.value.title || "");
       fd.append("mainCategory", form.value.mainCategory);
       if (form.value.subCategory) fd.append("subCategory", form.value.subCategory);
-      fd.append("latitude", String(latitude));
-      fd.append("longitude", String(longitude));
       fd.append("selectedPlanId", form.value.selectedPlanId);
       response = await post(ENDPOINTS.ADD_ADMIN_BANNER, fd);
     }
