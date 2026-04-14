@@ -1,11 +1,11 @@
 <template>
   <AdminLayout>
-    <PageBreadcrumb pageTitle="Banner Plans" />
+    <PageBreadcrumb pageTitle="Product Plans" />
 
     <div class="p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-          Banner Plans
+          Product Plans
         </h2>
 
         <button
@@ -78,13 +78,13 @@
         </BaseTable>
 
         <div v-if="plans.length === 0" class="text-center py-10 text-gray-500">
-          No banner plans found
+          No product plans found
         </div>
       </div>
     </div>
 
     <BaseModal v-if="showModal" @close="closeModal">
-      <template #title>{{ isEdit ? "Edit Banner Plan" : "Add Banner Plan" }}</template>
+      <template #title>{{ isEdit ? "Edit Product Plan" : "Add Product Plan" }}</template>
 
       <div class="grid grid-cols-1 gap-4">
         <div
@@ -141,7 +141,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import BaseTable from "@/components/common/BaseTable.vue";
@@ -229,12 +229,12 @@ const fetchPlans = async () => {
   loading.value = true;
 
   try {
-    const res = await get(ENDPOINTS.GET_PLANS, { includeInactive: true });
+    const res = await get(ENDPOINTS.GET_PLANS, { type: "product", includeInactive: true });
     plans.value = Array.isArray(res?.data) ? res.data : [];
   } catch (error) {
     console.error(error);
     plans.value = [];
-    showError(error?.response?.data?.message || "Error fetching banner plans.");
+    showError(error?.response?.data?.message || "Error fetching product plans.");
   } finally {
     loading.value = false;
   }
@@ -271,14 +271,14 @@ const savePlan = async () => {
     };
 
     const res = wasEdit
-      ? await post(ENDPOINTS.EDIT_PLANS(editPlanId.value), payload)
-      : await post(ENDPOINTS.ADD_PLANS, payload);
+      ? await post(ENDPOINTS.EDIT_PLANS(editPlanId.value) + "?type=product", payload)
+      : await post(ENDPOINTS.ADD_PLANS + "?type=product", payload);
     closeModal();
     showSuccess(
       res?.message ||
         (wasEdit
-          ? "Banner plan updated successfully."
-          : "Banner plan added successfully.")
+          ? "Product plan updated successfully."
+          : "Product plan added successfully.")
     );
     await fetchPlans();
   } catch (error) {
@@ -286,8 +286,8 @@ const savePlan = async () => {
     modalError.value =
       error?.response?.data?.message ||
       (wasEdit
-        ? "Error updating banner plan."
-        : "Error adding banner plan.");
+        ? "Error updating product plan."
+        : "Error adding product plan.");
   } finally {
     saving.value = false;
   }

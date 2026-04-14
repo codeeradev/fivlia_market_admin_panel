@@ -47,4 +47,8 @@ export const ENDPOINTS = {
   CREATE_NOTIFICATION: '/create-notification',
   EDIT_NOTIFICATION: (id: string) => `/edit-notification/${id}`,
   SEND_NOTIFICATION: '/send-notification',
+  ADD_FILTER: '/admin/add-filter',
+  GET_FILTERS: '/admin/get-all-filters',
+  DELETE_FILTER: (id: string) => `/admin/delete-filter/${id}`
+
 }

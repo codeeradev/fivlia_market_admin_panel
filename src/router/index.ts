@@ -24,10 +24,24 @@ const router = createRouter({
       },
     },
     {
+      path: '/filter',
+      name: 'Filter',
+      component: () => import('../views/filter/FilterList.vue'),
+      meta: {
+        title: 'Filter',
+      },
+    },
+    {
       path: '/products',
       name: 'Products',
       component: () => import('../views/Product/Products.vue'),
       meta: { title: 'Products' },
+    },
+    {
+      path: '/products/plans',
+      name: 'Product Plans',
+      component: () => import('../views/Product/ProductPlans.vue'),
+      meta: { title: 'Product Plans' },
     },
     {
       path: '/users',

@@ -85,26 +85,6 @@
           <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
             <div>
               <label class="mb-1 block text-sm font-medium text-gray-900 dark:text-gray-100">
-                Paid Product Price
-              </label>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
-                This value is used by the app and backend when charging for paid product listings.
-              </p>
-            </div>
-
-            <input
-              v-model="adminSetting.productPrice"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Product price"
-              class="border p-2 rounded"
-            />
-          </div>
-
-          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
-            <div>
-              <label class="mb-1 block text-sm font-medium text-gray-900 dark:text-gray-100">
                 Razorpay Key
               </label>
               <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -116,6 +96,46 @@
               v-model="adminSetting.razor_pay_key"
               type="text"
               placeholder="Enter Razorpay key"
+              class="border p-2 rounded"
+            />
+          </div>
+
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-900 dark:text-gray-100">
+                Expiry Reminder Days
+              </label>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Number of days before expiry to send reminder notifications for banners and products.
+              </p>
+            </div>
+
+            <input
+              v-model="adminSetting.expiryReminderDays"
+              type="number"
+              min="0"
+              step="1"
+              placeholder="e.g. 1 (day before expiry)"
+              class="border p-2 rounded"
+            />
+          </div>
+
+          <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-900 dark:text-gray-100">
+                Free Product Expiry Days
+              </label>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Number of days for free product listings to expire automatically (default: 90 days).
+              </p>
+            </div>
+
+            <input
+              v-model="adminSetting.freeProductExpiryDays"
+              type="number"
+              min="0"
+              step="1"
+              placeholder="e.g. 90"
               class="border p-2 rounded"
             />
           </div>
@@ -229,8 +249,9 @@ const adminSetting = reactive({
   term_and_conditons: "",
   safety_and_policy: "",
   radius: "",
-  productPrice: "",
   razor_pay_key: "",
+  expiryReminderDays: "",
+  freeProductExpiryDays: "",
 });
 
 const imageUrl = (path: string) => {
@@ -261,8 +282,9 @@ const loadAdminSetting = async () => {
       adminSetting.term_and_conditons = res.data.term_and_conditons ?? "";
       adminSetting.safety_and_policy = res.data.safety_and_policy ?? "";
       adminSetting.radius = res.data.radius ?? "";
-      adminSetting.productPrice = res.data.productPrice ?? "";
       adminSetting.razor_pay_key = res.data.razor_pay_key ?? "";
+      adminSetting.expiryReminderDays = res.data.expiryReminderDays ?? "";
+      adminSetting.freeProductExpiryDays = res.data.freeProductExpiryDays ?? "";
       selectedFileName.value = adminSetting.image
         ? "Current photo loaded"
         : "No profile photo selected";
@@ -296,17 +318,30 @@ const saveAdminSetting = async () => {
       payload.append("radius", "");
     }
 
-    const normalizedProductPrice = String(adminSetting.productPrice ?? "").trim();
-    if (normalizedProductPrice) {
-      const productPriceValue = Number(normalizedProductPrice);
-      if (!Number.isFinite(productPriceValue) || productPriceValue < 0) {
-        showToast("Product price must be a valid non-negative number", "error");
+    const normalizedExpiryReminderDays = String(adminSetting.expiryReminderDays ?? "").trim();
+    if (normalizedExpiryReminderDays) {
+      const expiryReminderDaysValue = Number(normalizedExpiryReminderDays);
+      if (!Number.isFinite(expiryReminderDaysValue) || expiryReminderDaysValue < 0) {
+        showToast("Expiry reminder days must be a valid non-negative number", "error");
         return;
       }
 
-      payload.append("productPrice", String(productPriceValue));
+      payload.append("expiryReminderDays", String(expiryReminderDaysValue));
     } else {
-      payload.append("productPrice", "");
+      payload.append("expiryReminderDays", "");
+    }
+
+    const normalizedFreeProductExpiryDays = String(adminSetting.freeProductExpiryDays ?? "").trim();
+    if (normalizedFreeProductExpiryDays) {
+      const freeProductExpiryDaysValue = Number(normalizedFreeProductExpiryDays);
+      if (!Number.isFinite(freeProductExpiryDaysValue) || freeProductExpiryDaysValue < 0) {
+        showToast("Free product expiry days must be a valid non-negative number", "error");
+        return;
+      }
+
+      payload.append("freeProductExpiryDays", String(freeProductExpiryDaysValue));
+    } else {
+      payload.append("freeProductExpiryDays", "");
     }
 
     if (adminSetting.password.trim()) {

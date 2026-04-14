@@ -164,6 +164,16 @@
           <input type="file" accept="image/*" @change="selectFile" class="h-10 w-full rounded border p-2" />
           <img v-if="preview" :src="preview" class="mt-2 h-24 w-48 rounded border object-cover" />
         </div>
+
+        <div v-if="!isEdit">
+          <label class="mb-1 block text-sm font-medium">Banner Plan</label>
+          <select v-model="form.selectedPlanId" class="h-10 w-full rounded border p-2">
+            <option value="">Select a plan</option>
+            <option v-for="plan in plans" :key="plan._id" :value="plan._id">
+              {{ plan.duration }} months - Rs. {{ plan.price.toLocaleString('en-IN') }}
+            </option>
+          </select>
+        </div>
       </div>
 
       <template #footer>
@@ -235,8 +245,8 @@
 
               <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div class="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/50">
-                  <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Plan Type</p>
-                  <p class="mt-1 font-semibold text-gray-900 dark:text-gray-100">{{ formatPlanType(detailBanner.selectedPlanId?.type) }}</p>
+                  <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Plan Duration</p>
+                  <p class="mt-1 font-semibold text-gray-900 dark:text-gray-100">{{ detailBanner.selectedPlanId?.duration || '-' }} months</p>
                 </div>
                 <div class="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900/50">
                   <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Price</p>
@@ -354,13 +364,13 @@ import BaseTable from "@/components/common/BaseTable.vue";
 import { get, post, put } from "@/apis/apiClient";
 import { ENDPOINTS } from "@/apis/endpoint";
 import { useAppAlert } from "@/composables/useAppAlert";
-import { formatBannerPlanType } from "@/utils/bannerPlanTypes";
 
 const { setAlert } = useAppAlert();
 
 const banners = ref([]);
 const categories = ref([]);
 const subCategories = ref([]);
+const plans = ref([]);
 
 const showModal = ref(false);
 const showDetailsModal = ref(false);
@@ -383,12 +393,12 @@ const form = ref({
   subCategory: "",
   latitude: "",
   longitude: "",
+  selectedPlanId: "",
 });
 
 const IMAGE_URL = import.meta.env.VITE_IMAGEURL || "";
 const REQUIRED_BANNER_WIDTH = 1280;
 const REQUIRED_BANNER_HEIGHT = 540;
-const formatPlanType = formatBannerPlanType;
 
 const getErrorMessage = (error, fallbackMessage) =>
   error?.response?.data?.message || fallbackMessage;
@@ -576,7 +586,7 @@ const editFromDetails = () => {
 };
 
 onMounted(async () => {
-  await Promise.all([fetchAll(), loadCategories()]);
+  await Promise.all([fetchAll(), loadCategories(), loadPlans()]);
 });
 
 const fetchAll = async ({ silent = false, showError = true } = {}) => {
@@ -614,6 +624,17 @@ const loadCategories = async () => {
   }
 };
 
+const loadPlans = async () => {
+  try {
+    const res = await get(ENDPOINTS.GET_PLANS, { includeInactive: false });
+    plans.value = Array.isArray(res?.data) ? res.data : [];
+  } catch (error) {
+    console.error(error);
+    plans.value = [];
+    setAlert("error", getErrorMessage(error, "Failed to load banner plans"));
+  }
+};
+
 const loadSubCategories = () => {
   const selectedMainCategoryId = toIdString(form.value.mainCategory);
   const cat = categories.value.find(
@@ -645,6 +666,7 @@ const resetForm = () => {
     subCategory: "",
     latitude: "",
     longitude: "",
+    selectedPlanId: "",
   };
 };
 
@@ -736,6 +758,11 @@ const saveBanner = async () => {
     return;
   }
 
+  if (!isEdit.value && !form.value.selectedPlanId) {
+    setAlert("warning", "Banner plan is required");
+    return;
+  }
+
   if (file.value) {
     try {
       const isValidImage = await validateBannerImage(file.value);
@@ -813,6 +840,7 @@ const saveBanner = async () => {
       if (form.value.subCategory) fd.append("subCategory", form.value.subCategory);
       fd.append("latitude", String(latitude));
       fd.append("longitude", String(longitude));
+      fd.append("selectedPlanId", form.value.selectedPlanId);
       response = await post(ENDPOINTS.ADD_ADMIN_BANNER, fd);
     }
 

@@ -194,7 +194,15 @@ const menuGroups: MenuGroup[] = [
     items: [
       { icon: GridIcon, name: "Dashboard", subItems: [{ name: "Ecommerce", path: "/", pro: false }] },
       { icon: CalenderIcon, name: "Category", path: "/category" },
-      { icon: ListIcon, name: "Products", path: "/products" },
+      {
+        icon: ListIcon,
+        name: "Products",
+        subItems: [
+          { name: "Product List", path: "/products" },
+          { name: "Product Plans", path: "/products/plans" },
+        ],
+      },
+      { icon: PageIcon, name: "Filter", path: "/filter" },
       {
         icon: PageIcon,
         name: "Banners",
