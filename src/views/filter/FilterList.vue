@@ -12,7 +12,7 @@
             <div class="mb-4 flex flex-col items-start justify-between gap-3
         md:flex-row md:items-center">
                 <div class="flex items-center gap-2">
-                    <button @click="showAddModal = true" class="rounded bg-green-600 px-3 py-2 text-sm text-white">
+                    <button @click="openAddModal" class="rounded bg-green-600 px-3 py-2 text-sm text-white">
                         Add Filter
                     </button>
 
@@ -76,6 +76,11 @@
                             </td>
 
                             <td class="px-4 py-3">
+                                <button @click="editFilter(item)"
+                                    class="mr-2 rounded bg-amber-500 px-3 py-2 text-xs text-white">
+                                    Edit
+                                </button>
+
                                 <button @click="deleteFilter(item._id)"
                                     class="rounded bg-red-600 px-3 py-2 text-xs text-white">
                                     Delete
@@ -88,9 +93,9 @@
             </div>
 
             <!-- Add Modal -->
-            <BaseModal v-if="showAddModal" @close="closeAddModal">
+            <BaseModal v-if="showModal" @close="closeModal">
 
-                <template #title>Add Filter</template>
+                <template #title>{{ isEdit ? 'Edit Filter' : 'Add Filter' }}</template>
 
                 <template #default>
 
@@ -149,12 +154,13 @@
 
                     <div class="flex gap-2">
 
-                        <button @click="closeAddModal" class="rounded bg-gray-300 px-4 py-2">
+                        <button @click="closeModal" class="rounded bg-gray-300 px-4 py-2">
                             Cancel
                         </button>
 
-                        <button @click="submitFilter" class="rounded bg-green-600 px-4 py-2 text-white">
-                            Save
+                        <button @click="submitFilter" :disabled="submitting"
+                            class="rounded bg-green-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-60">
+                            {{ submitting ? 'Saving...' : isEdit ? 'Update' : 'Save' }}
                         </button>
 
                     </div>
@@ -184,7 +190,10 @@ const currentPageTitle = ref('Filters')
 const filters = ref([])
 const loading = ref(true)
 
-const showAddModal = ref(false)
+const showModal = ref(false)
+const isEdit = ref(false)
+const editingFilterId = ref('')
+const submitting = ref(false)
 
 const skillInput = ref('')
 
@@ -196,6 +205,17 @@ const form = ref({
     categoryId: '',
     subCategoryId: ''
 })
+
+const resetForm = () => {
+    form.value = {
+        filters: [],
+        categoryId: '',
+        subCategoryId: ''
+    }
+
+    subCategories.value = []
+    skillInput.value = ''
+}
 
 /* Load Filters */
 
@@ -268,6 +288,8 @@ const submitFilter = async () => {
 
     try {
 
+        submitting.value = true
+
         if (form.value.filters.length === 0 || !form.value.categoryId) {
 
             alert('Filters and Category required')
@@ -275,23 +297,37 @@ const submitFilter = async () => {
 
         }
 
-        await post(ENDPOINTS.ADD_FILTER, {
+        const payload = {
 
             filter: form.value.filters,
             categoryId: form.value.categoryId,
             subCategoryId: form.value.subCategoryId || null
 
-        })
+        }
 
-        closeAddModal()
+        if (isEdit.value && editingFilterId.value) {
 
-        loadFilters()
+            await post(ENDPOINTS.EDIT_FILTER(editingFilterId.value), payload)
+
+        } else {
+
+            await post(ENDPOINTS.ADD_FILTER, payload)
+
+        }
+
+        closeModal()
+
+        await loadFilters()
 
     } catch (error) {
 
         console.error(error)
 
-        alert(error?.response?.data?.message || 'Failed to add filter')
+        alert(error?.response?.data?.message || `Failed to ${isEdit.value ? 'update' : 'add'} filter`)
+
+    } finally {
+
+        submitting.value = false
 
     }
 
@@ -307,7 +343,7 @@ const deleteFilter = async (id) => {
 
         await del(ENDPOINTS.DELETE_FILTER(id))
 
-        loadFilters()
+        await loadFilters()
 
     } catch (error) {
 
@@ -317,28 +353,59 @@ const deleteFilter = async (id) => {
 
 }
 
-/* Close Modal */
+/* Open Add Modal */
 
-const closeAddModal = () => {
+const openAddModal = () => {
 
-    showAddModal.value = false
+    isEdit.value = false
+    editingFilterId.value = ''
+    resetForm()
+    showModal.value = true
+
+}
+
+/* Edit Filter */
+
+const editFilter = (item) => {
+
+    isEdit.value = true
+    editingFilterId.value = item._id
 
     form.value = {
-
-        filters: [],
-        categoryId: '',
-        subCategoryId: ''
-
+        filters: Array.isArray(item.filter) ? [...item.filter] : [],
+        categoryId: item.categoryId || '',
+        subCategoryId: item.subCategoryId || ''
     }
+
+    skillInput.value = ''
+    onCategoryChange(true)
+    showModal.value = true
+
+}
+
+/* Close Modal */
+
+const closeModal = () => {
+
+    showModal.value = false
+    isEdit.value = false
+    editingFilterId.value = ''
+    resetForm()
 
 }
 
 /* Handle Category Change */
 
-const onCategoryChange = () => {
-    form.value.subCategoryId = ''
+const onCategoryChange = (preserveSelection = false) => {
+    const currentSubCategoryId = form.value.subCategoryId
     const selectedCategory = categories.value.find(cat => cat._id === form.value.categoryId)
     subCategories.value = selectedCategory?.subcat || []
+
+    if (preserveSelection && subCategories.value.some(sub => sub._id === currentSubCategoryId)) {
+        return
+    }
+
+    form.value.subCategoryId = ''
 }
 
 /* Get Category Name */
