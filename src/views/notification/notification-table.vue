@@ -2,40 +2,30 @@
   <AdminLayout>
     <PageBreadcrumb pageTitle="Notifications" />
 
-    <div
-      class="p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800"
-    >
+    <div class="p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
           Notifications
         </h2>
 
-        <button
-          @click="openModal"
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-        >
+        <button @click="openModal" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
           + Add Notification
         </button>
       </div>
 
       <!-- ALERT -->
-      <div
-        v-if="alert.message"
-        :class="[
-          'mb-4 px-4 py-3 rounded text-sm',
-          alert.type === 'success'
-            ? 'bg-green-100 text-green-800'
-            : 'bg-red-100 text-red-800',
-        ]"
-      >
+      <div v-if="alert.message" :class="[
+        'mb-4 px-4 py-3 rounded text-sm',
+        alert.type === 'success'
+          ? 'bg-green-100 text-green-800'
+          : 'bg-red-100 text-red-800',
+      ]">
         {{ alert.message }}
       </div>
 
       <!-- LOADER -->
       <div v-if="loading" class="py-10 flex justify-center">
-        <div
-          class="h-8 w-8 rounded-full animate-spin border-4 border-gray-200 border-t-blue-600"
-        ></div>
+        <div class="h-8 w-8 rounded-full animate-spin border-4 border-gray-200 border-t-blue-600"></div>
       </div>
 
       <!-- TABLE -->
@@ -50,18 +40,10 @@
           </template>
 
           <template #body>
-            <tr
-              v-for="n in notifications"
-              :key="n._id"
-              class="hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
+            <tr v-for="n in notifications" :key="n._id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
               <!-- IMAGE -->
               <td class="px-4 py-2">
-                <img
-                  v-if="n.image"
-                  :src="imageUrl(n.image)"
-                  class="h-12 w-20 rounded object-cover border"
-                />
+                <img v-if="n.image" :src="imageUrl(n.image)" class="h-12 w-20 rounded object-cover border" />
                 <span v-else class="text-xs text-gray-400">No image</span>
               </td>
 
@@ -77,28 +59,24 @@
               </td>
 
               <td class="px-4 py-2 text-center space-x-2">
-                <button
-                  @click="editNotification(n)"
-                  class="px-2 py-1 bg-yellow-500 text-white rounded text-xs"
-                >
+                <button @click="editNotification(n)" class="px-2 py-1 bg-yellow-500 text-white rounded text-xs">
                   Edit
                 </button>
 
-                <button
-                  @click="sendNow(n._id)"
-                  class="px-2 py-1 bg-green-600 text-white rounded text-xs"
-                >
+                <button @click="sendNow(n._id)" class="px-2 py-1 bg-green-600 text-white rounded text-xs">
                   Send
+                </button>
+
+                <!-- DELETE BUTTON -->
+                <button @click="deleteNotification(n._id)" class="px-2 py-1 bg-red-600 text-white rounded text-xs">
+                  Delete
                 </button>
               </td>
             </tr>
           </template>
         </BaseTable>
 
-        <div
-          v-if="notifications.length === 0"
-          class="text-center py-10 text-gray-500"
-        >
+        <div v-if="notifications.length === 0" class="text-center py-10 text-gray-500">
           No notifications found
         </div>
       </div>
@@ -118,11 +96,7 @@
 
         <div>
           <label class="font-medium text-sm">Description</label>
-          <textarea
-            v-model="form.description"
-            rows="3"
-            class="border rounded p-2 w-full"
-          ></textarea>
+          <textarea v-model="form.description" rows="3" class="border rounded p-2 w-full"></textarea>
         </div>
 
         <div>
@@ -137,11 +111,7 @@
 
         <div>
           <label class="font-medium text-sm">Screen</label>
-          <select
-            v-model="form.screen"
-            @change="onScreenChange"
-            class="border rounded p-2 h-10 w-full"
-          >
+          <select v-model="form.screen" @change="onScreenChange" class="border rounded p-2 h-10 w-full">
             <option value="">No screen redirect</option>
             <option value="product">Product</option>
             <option value="category">Category</option>
@@ -152,10 +122,7 @@
           <label class="font-medium text-sm">
             {{ form.screen === "product" ? "Select Product" : "Select Category" }}
           </label>
-          <select
-            v-model="form.refId"
-            class="border rounded p-2 h-10 w-full"
-          >
+          <select v-model="form.refId" class="border rounded p-2 h-10 w-full">
             <option value="">
               {{
                 form.screen === "product"
@@ -163,11 +130,7 @@
                   : "Choose a category"
               }}
             </option>
-            <option
-              v-for="option in selectedScreenOptions"
-              :key="option._id"
-              :value="option._id"
-            >
+            <option v-for="option in selectedScreenOptions" :key="option._id" :value="option._id">
               {{ option.name || option.title || "Untitled" }}
             </option>
           </select>
@@ -176,19 +139,11 @@
         <!-- IMAGE -->
         <div>
           <label class="font-medium text-sm">Image</label>
-          <input
-            type="file"
-            accept="image/*"
-            @change="onImageChange"
-            class="border rounded p-2 w-full"
-          />
+          <input type="file" accept="image/*" @change="onImageChange" class="border rounded p-2 w-full" />
 
           <!-- OLD IMAGE (EDIT MODE) -->
           <div v-if="imagePreview" class="mt-3">
-            <img
-              :src="imagePreview"
-              class="h-32 rounded border object-cover"
-            />
+            <img :src="imagePreview" class="h-32 rounded border object-cover" />
           </div>
         </div>
       </div>
@@ -198,11 +153,7 @@
           Cancel
         </button>
 
-        <button
-          @click="saveNotification"
-          :disabled="saving"
-          class="px-4 py-2 bg-blue-600 text-white rounded"
-        >
+        <button @click="saveNotification" :disabled="saving" class="px-4 py-2 bg-blue-600 text-white rounded">
           {{ saving ? "Saving..." : "Save" }}
         </button>
       </template>
@@ -216,7 +167,7 @@ import AdminLayout from "@/components/layout/AdminLayout.vue";
 import PageBreadcrumb from "@/components/common/PageBreadcrumb.vue";
 import BaseModal from "@/components/common/BaseModal.vue";
 import BaseTable from "@/components/common/BaseTable.vue";
-import { get, post } from "@/apis/apiClient";
+import { get, post, del } from "@/apis/apiClient";
 import { ENDPOINTS } from "@/apis/endpoint";
 
 /* ENV IMAGE URL */
@@ -262,6 +213,28 @@ const normalizeSingleValue = (value, fallback = "") => {
 const imageUrl = (path) => {
   if (!path) return "";
   return IMAGE_BASE + path;
+};
+
+const deleteNotification = async (id) => {
+  if (!confirm("Are you sure you want to delete this notification?")) return;
+
+  try {
+    await del(ENDPOINTS.DELETE_NOTIFICATION(id));
+
+    alert.value = {
+      message: "Notification deleted successfully",
+      type: "success",
+    };
+
+    await loadNotifications(); // refresh list
+  } catch (error) {
+    console.error("Delete failed", error);
+    alert.value = {
+      message:
+        error?.response?.data?.message || "Failed to delete notification",
+      type: "error",
+    };
+  }
 };
 
 /* FETCH */
