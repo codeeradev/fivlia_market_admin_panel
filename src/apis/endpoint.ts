@@ -48,9 +48,10 @@ export const ENDPOINTS = {
   EDIT_NOTIFICATION: (id: string) => `/edit-notification/${id}`,
   DELETE_NOTIFICATION: (id: string) => `/delete-notification/${id}`,
   SEND_NOTIFICATION: '/send-notification',
+  GET_HELP_ENQUIRIES: '/admin/get-help-forms',
+  UPDATE_HELP_FORM_STATUS: (id: string) => `/admin/update-help-form-status/${id}`,
   ADD_FILTER: '/admin/add-filter',
   EDIT_FILTER: (id: string) => `/admin/edit-filter/${id}`,
   GET_FILTERS: '/admin/get-all-filters',
-  DELETE_FILTER: (id: string) => `/admin/delete-filter/${id}`
-
+  DELETE_FILTER: (id: string) => `/admin/delete-filter/${id}`,
 }

@@ -121,6 +121,14 @@ const router = createRouter({
         title: 'Approvals',
       },
     },
+    {
+      path: '/help-requests',
+      name: 'Help Requests',
+      component: () => import('../views/Support/HelpEnquiries.vue'),
+      meta: {
+        title: 'Help Requests',
+      },
+    },
 
     {
       path: '/notification',

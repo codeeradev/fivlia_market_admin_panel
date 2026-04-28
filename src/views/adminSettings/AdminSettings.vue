@@ -51,10 +51,16 @@
               class="border p-2 rounded"
             />
             <input
+              v-model="adminSetting.enquiry_number"
+              type="text"
+              placeholder="Enquiry Number"
+              class="border p-2 rounded"
+            />
+            <input
               v-model="adminSetting.password"
               type="password"
               placeholder="Admin Password"
-              class="border p-2 rounded md:col-span-2"
+              class="border p-2 rounded"
             />
           </div>
         </div>
@@ -244,6 +250,7 @@ const selectedFileName = ref("No profile photo selected");
 const adminSetting = reactive({
   name: "",
   email: "",
+  enquiry_number: "",
   password: "",
   image: "",
   term_and_conditons: "",
@@ -277,6 +284,7 @@ const loadAdminSetting = async () => {
       previewImage.value = "";
       adminSetting.name = res.data.name ?? "";
       adminSetting.email = res.data.email ?? "";
+      adminSetting.enquiry_number = res.data.enquiry_number ?? "";
       adminSetting.password = "";
       adminSetting.image = res.data.image ?? "";
       adminSetting.term_and_conditons = res.data.term_and_conditons ?? "";
@@ -301,6 +309,7 @@ const saveAdminSetting = async () => {
     const payload = new FormData();
     payload.append("name", adminSetting.name || "");
     payload.append("email", adminSetting.email || "");
+    payload.append("enquiry_number", adminSetting.enquiry_number || "");
     payload.append("term_and_conditons", adminSetting.term_and_conditons || "");
     payload.append("safety_and_policy", adminSetting.safety_and_policy || "");
     payload.append("razor_pay_key", adminSetting.razor_pay_key || "");
