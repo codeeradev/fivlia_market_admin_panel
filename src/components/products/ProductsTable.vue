@@ -45,12 +45,26 @@
 
           <td class="px-4 py-3">
             <button
+              v-if="p.productStatus === 'expired'"
+              class="mr-3 text-green-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+              :disabled="repostingId === p._id"
+              @click="$emit('repost', p)"
+            >
+              {{ repostingId === p._id ? 'Reposting...' : 'Repost' }}
+            </button>
+            <button
               class="text-blue-600 hover:underline mr-3"
               @click="$emit('edit', p)"
             >
               Edit
             </button>
-            <button class="text-red-600 hover:underline">Delete</button>
+            <button
+              class="text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+              :disabled="deletingId === p._id"
+              @click="$emit('delete', p)"
+            >
+              {{ deletingId === p._id ? 'Deleting...' : 'Delete' }}
+            </button>
           </td>
         </tr>
       </tbody>
@@ -61,8 +75,10 @@
 <script setup>
 defineProps({
   products: { type: Array, default: () => [] },
+  deletingId: { type: String, default: '' },
+  repostingId: { type: String, default: '' },
 })
-defineEmits(["edit"])
+defineEmits(["edit", "delete", "repost"])
 
 const IMAGEURL = import.meta.env.VITE_IMAGEURL
 

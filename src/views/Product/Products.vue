@@ -5,9 +5,17 @@
     <div
       class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6"
     >
-      <h3 class="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">
-        Products
-      </h3>
+      <div class="mb-5 flex items-center justify-between lg:mb-7">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+          Products
+        </h3>
+        <button
+          @click="openCreateModal"
+          class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        >
+          + Add Product
+        </button>
+      </div>
 
       <!-- ALERT -->
       <div
@@ -31,7 +39,11 @@
       <ProductsTable
         v-if="!loading"
         :products="products"
+        :deleting-id="deletingProductId"
+        :reposting-id="repostingProductId"
         @edit="openEditModal"
+        @delete="deleteProduct"
+        @repost="repostProduct"
       />
 
       <!-- PAGINATION -->
@@ -57,6 +69,61 @@
         </button>
       </div>
     </div>
+
+    <!-- CREATE MODAL -->
+    <BaseModal v-if="showCreateModal" @close="closeCreateModal">
+      <template #title>Add Product</template>
+
+      <div class="grid grid-cols-1 gap-4">
+        <div>
+          <label class="mb-1 block text-sm font-medium">Name</label>
+          <input v-model="createForm.name" type="text" class="h-10 w-full rounded border p-2" placeholder="Product name" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium">Description</label>
+          <textarea v-model="createForm.description" rows="3" class="w-full rounded border p-2" placeholder="Product description"></textarea>
+        </div>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-sm font-medium">Price</label>
+            <input v-model="createForm.price" type="number" min="0" class="h-10 w-full rounded border p-2" placeholder="0" />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium">Address</label>
+            <input v-model="createForm.address" type="text" class="h-10 w-full rounded border p-2" placeholder="Address" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-sm font-medium">Category</label>
+            <select v-model="createForm.category" @change="onCreateCategoryChange" class="h-10 w-full rounded border p-2">
+              <option value="">Select Category</option>
+              <option v-for="cat in categories" :key="cat._id" :value="cat._id">{{ cat.name }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium">Sub Category</label>
+            <select v-model="createForm.subCategory" :disabled="!createForm.category" class="h-10 w-full rounded border p-2 disabled:opacity-60">
+              <option value="">Select Sub Category</option>
+              <option v-for="sub in createSubCategories" :key="sub._id" :value="sub._id">{{ sub.name }}</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium">Images</label>
+          <p class="mb-2 text-xs text-gray-600">Recommended image size: 500 x 500 px.</p>
+          <input type="file" accept="image/*" multiple @change="onCreateImageChange" class="w-full rounded border p-2" />
+          <p v-if="createImageFiles.length" class="mt-1 text-xs text-gray-600">{{ createImageFiles.length }} file(s) selected.</p>
+        </div>
+      </div>
+
+      <template #footer>
+        <button @click="closeCreateModal" class="rounded border px-4 py-2">Cancel</button>
+        <button @click="createProduct" :disabled="creating" class="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-60">
+          {{ creating ? "Adding..." : "Add Product" }}
+        </button>
+      </template>
+    </BaseModal>
 
     <!-- EDIT MODAL -->
     <BaseModal v-if="showEditModal" @close="closeEditModal">
@@ -207,7 +274,7 @@ import PageBreadcrumb from '@/components/common/PageBreadcrumb.vue'
 import AdminLayout from '@/components/layout/AdminLayout.vue'
 import ProductsTable from '@/components/products/ProductsTable.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
-import { get, post } from "@/apis/apiClient"
+import { del, get, post } from "@/apis/apiClient"
 import { ENDPOINTS } from "@/apis/endpoint"
 
 const currentPageTitle = ref("Products")
@@ -224,10 +291,25 @@ const page = ref(1)
 const limit = 10
 
 const totalPages = ref(1)
+const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const editProductId = ref("")
 const selectedImageFiles = ref([])
 const currentProductImages = ref([])
+const deletingProductId = ref("")
+const repostingProductId = ref("")
+const createImageFiles = ref([])
+const createSubCategories = ref([])
+const creating = ref(false)
+
+const createForm = ref({
+  name: "",
+  description: "",
+  price: "",
+  address: "",
+  category: "",
+  subCategory: "",
+})
 
 const editForm = ref({
   name: "",
@@ -302,6 +384,111 @@ function onCategoryChange() {
   subCategories.value = getSubCategoryOptions(editForm.value.category)
   if (!subCategories.value.some((sub) => sub._id === editForm.value.subCategory)) {
     editForm.value.subCategory = ""
+  }
+}
+
+function onCreateCategoryChange() {
+  createSubCategories.value = getSubCategoryOptions(createForm.value.category)
+  if (!createSubCategories.value.some((sub) => sub._id === createForm.value.subCategory)) {
+    createForm.value.subCategory = ""
+  }
+}
+
+function openCreateModal() {
+  createForm.value = { name: "", description: "", price: "", address: "", category: "", subCategory: "" }
+  createImageFiles.value = []
+  createSubCategories.value = []
+  showCreateModal.value = true
+}
+
+function closeCreateModal() {
+  showCreateModal.value = false
+  createImageFiles.value = []
+  createSubCategories.value = []
+}
+
+function onCreateImageChange(event) {
+  createImageFiles.value = Array.from(event.target?.files || [])
+}
+
+async function createProduct() {
+  const name = createForm.value.name.trim()
+  const price = Number(createForm.value.price)
+
+  if (!name) return showError("Product name is required.")
+  if (!Number.isFinite(price) || price < 0) return showError("A valid product price is required.")
+  if (!createForm.value.category) return showError("Category is required.")
+
+  creating.value = true
+  alert.value.show = false
+
+  try {
+    const fd = new FormData()
+    fd.append("name", name)
+    fd.append("description", createForm.value.description.trim())
+    fd.append("price", String(price))
+    fd.append("address", createForm.value.address.trim())
+    fd.append("category", createForm.value.category)
+    if (createForm.value.subCategory) fd.append("subCategory", createForm.value.subCategory)
+    createImageFiles.value.forEach((file) => fd.append("MultipleImage", file))
+
+    const response = await post(ENDPOINTS.ADD_ADMIN_PRODUCT, fd)
+    closeCreateModal()
+    page.value = 1
+    await loadProducts()
+    showSuccess(response?.message || "Product added successfully")
+  } catch (error) {
+    console.error(error)
+    showError(error?.response?.data?.message || "Failed to add product.")
+  } finally {
+    creating.value = false
+  }
+}
+
+async function deleteProduct(product) {
+  const productId = product?._id
+  if (!productId) return
+
+  if (!window.confirm(`Delete "${product?.name || "this product"}"? This cannot be undone.`)) return
+
+  deletingProductId.value = productId
+  alert.value.show = false
+
+  try {
+    const response = await del(ENDPOINTS.DELETE_ADMIN_PRODUCT(productId))
+    products.value = products.value.filter((item) => item._id !== productId)
+
+    if (products.value.length === 0 && page.value > 1) {
+      page.value--
+    }
+    await loadProducts()
+    showSuccess(response?.message || "Product deleted successfully")
+  } catch (error) {
+    console.error(error)
+    showError(error?.response?.data?.message || "Failed to delete product.")
+  } finally {
+    deletingProductId.value = ""
+  }
+}
+
+async function repostProduct(product) {
+  const productId = product?._id
+  if (!productId) return
+
+  if (!window.confirm(`Repost "${product?.name || "this product"}" and make it active again?`)) return
+
+  repostingProductId.value = productId
+  alert.value.show = false
+
+  try {
+    const response = await post(ENDPOINTS.REPOST_ADMIN_PRODUCT(productId))
+    await loadProducts()
+    showSuccess(response?.message || "Product reposted and activated successfully")
+  } catch (error) {
+    console.error(error)
+    showError(error?.response?.data?.message || "Failed to repost product.")
+  } finally {
+    repostingProductId.value = ""
   }
 }
 
