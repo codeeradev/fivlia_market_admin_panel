@@ -23,6 +23,8 @@ export const ENDPOINTS = {
           : `/toggleStatus/${catId}`,
   },
   USERS: '/getUsers',
+  ADD_ADMIN_USER: '/admin/add-user',
+  EDIT_ADMIN_USER: (id: string) => `/admin/edit-user/${id}`,
   PRODUCTS: '/getProduct',
   ADD_ADMIN_PRODUCT: '/admin/addProduct',
   DELETE_ADMIN_PRODUCT: (id: string) => `/admin/delete-product/${id}`,

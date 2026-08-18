@@ -89,8 +89,13 @@
             <input v-model="createForm.price" type="number" min="0" class="h-10 w-full rounded border p-2" placeholder="0" />
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium">Address</label>
-            <input v-model="createForm.address" type="text" class="h-10 w-full rounded border p-2" placeholder="Address" />
+            <label class="mb-1 block text-sm font-medium">User</label>
+            <select v-model="createForm.userId" class="h-10 w-full rounded border p-2">
+              <option value="">Select User</option>
+              <option v-for="user in users" :key="user._id" :value="user._id" :disabled="!hasCoordinates(user)">
+                {{ userLabel(user) }}{{ hasCoordinates(user) ? '' : ' (location missing)' }}
+              </option>
+            </select>
           </div>
         </div>
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -163,13 +168,13 @@
           </div>
 
           <div>
-            <label class="font-medium text-sm mb-1 block">Address</label>
-            <input
-              v-model="editForm.address"
-              type="text"
-              class="border rounded p-2 h-10 w-full"
-              placeholder="Address"
-            />
+            <label class="font-medium text-sm mb-1 block">User</label>
+            <select v-model="editForm.userId" class="border rounded p-2 h-10 w-full">
+              <option value="">Select User</option>
+              <option v-for="user in users" :key="user._id" :value="user._id" :disabled="!hasCoordinates(user)">
+                {{ userLabel(user) }}{{ hasCoordinates(user) ? '' : ' (location missing)' }}
+              </option>
+            </select>
           </div>
         </div>
 
@@ -285,6 +290,7 @@ const saving = ref(false)
 const alert = ref({ show: false, type: "error", message: "" })
 
 const products = ref([])
+const users = ref([])
 const categories = ref([])
 const subCategories = ref([])
 const page = ref(1)
@@ -306,7 +312,7 @@ const createForm = ref({
   name: "",
   description: "",
   price: "",
-  address: "",
+  userId: "",
   category: "",
   subCategory: "",
 })
@@ -315,7 +321,7 @@ const editForm = ref({
   name: "",
   description: "",
   price: "",
-  address: "",
+  userId: "",
   paymentType: "",
   category: "",
   subCategory: "",
@@ -362,6 +368,28 @@ async function loadCategories() {
   }
 }
 
+async function loadUsers() {
+  try {
+    const response = await get(ENDPOINTS.USERS)
+    users.value = response?.users || []
+  } catch (error) {
+    console.error(error)
+    users.value = []
+    showError("Failed to load users.")
+  }
+}
+
+function hasCoordinates(user) {
+  const latitude = Number(user?.latitude)
+  const longitude = Number(user?.longitude)
+  return Number.isFinite(latitude) && Number.isFinite(longitude)
+    && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180
+}
+
+function userLabel(user) {
+  return [user?.name, user?.mobileNumber || user?.email].filter(Boolean).join(" — ") || "Unnamed user"
+}
+
 function imageUrl(path) {
   if (!path) return "/no-image.png"
   if (path.startsWith("http") || path.startsWith("blob:")) return path
@@ -395,7 +423,7 @@ function onCreateCategoryChange() {
 }
 
 function openCreateModal() {
-  createForm.value = { name: "", description: "", price: "", address: "", category: "", subCategory: "" }
+  createForm.value = { name: "", description: "", price: "", userId: "", category: "", subCategory: "" }
   createImageFiles.value = []
   createSubCategories.value = []
   showCreateModal.value = true
@@ -417,6 +445,7 @@ async function createProduct() {
 
   if (!name) return showError("Product name is required.")
   if (!Number.isFinite(price) || price < 0) return showError("A valid product price is required.")
+  if (!createForm.value.userId) return showError("Please select a user with a saved location.")
   if (!createForm.value.category) return showError("Category is required.")
 
   creating.value = true
@@ -427,7 +456,7 @@ async function createProduct() {
     fd.append("name", name)
     fd.append("description", createForm.value.description.trim())
     fd.append("price", String(price))
-    fd.append("address", createForm.value.address.trim())
+    fd.append("userId", createForm.value.userId)
     fd.append("category", createForm.value.category)
     if (createForm.value.subCategory) fd.append("subCategory", createForm.value.subCategory)
     createImageFiles.value.forEach((file) => fd.append("MultipleImage", file))
@@ -501,7 +530,7 @@ function closeEditModal() {
     name: "",
     description: "",
     price: "",
-    address: "",
+    userId: "",
     paymentType: "",
     category: "",
     subCategory: "",
@@ -515,7 +544,7 @@ function openEditModal(product) {
     name: product?.name || "",
     description: product?.description || "",
     price: product?.price !== undefined && product?.price !== null ? String(product.price) : "",
-    address: product?.address || "",
+    userId: normalizeId(product?.userId),
     paymentType: product?.paymentType === "paid" ? "paid" : "free",
     category: normalizeId(product?.category || product?.mainCategory),
     subCategory: normalizeId(product?.subCategory),
@@ -552,7 +581,7 @@ async function saveProduct() {
     if (editForm.value.name?.trim()) fd.append("name", editForm.value.name.trim())
     if (editForm.value.description?.trim()) fd.append("description", editForm.value.description.trim())
     if (editForm.value.price !== "") fd.append("price", String(editForm.value.price))
-    if (editForm.value.address?.trim()) fd.append("address", editForm.value.address.trim())
+    if (editForm.value.userId) fd.append("userId", editForm.value.userId)
     if (editForm.value.paymentType?.trim()) fd.append("paymentType", editForm.value.paymentType.trim())
     if (editForm.value.category) fd.append("category", editForm.value.category)
     if (editForm.value.subCategory) fd.append("subCategory", editForm.value.subCategory)
@@ -592,5 +621,6 @@ function prevPage() {
 onMounted(() => {
   loadProducts()
   loadCategories()
+  loadUsers()
 })
 </script>

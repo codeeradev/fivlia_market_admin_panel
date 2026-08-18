@@ -29,8 +29,8 @@
             <button class="text-blue-600 hover:underline mr-2" @click="$emit('view', user)">
               View
             </button>
-            <button class="text-red-600 hover:underline" @click="$emit('delete', user._id)">
-              Delete
+            <button class="text-green-600 hover:underline" @click="$emit('edit', user)">
+              Edit
             </button>
           </td>
         </tr>
@@ -44,4 +44,5 @@
 defineProps({
   users: { type: Array, default: () => [] }
 })
+defineEmits(["view", "edit"])
 </script>
